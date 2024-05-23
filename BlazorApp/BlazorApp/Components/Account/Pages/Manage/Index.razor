@@ -1,18 +1,20 @@
 ﻿@page "/Account/Manage"
 
 @using System.ComponentModel.DataAnnotations
+@using BlazorApp.Extensions.Exceptions
 @using Microsoft.AspNetCore.Identity
 @using BlazorApp.Data
+@using BlazorApp.Services.Interfaces
+@using System.Security.Claims
 
-@inject UserManager<ApplicationUser> UserManager
-@inject SignInManager<ApplicationUser> SignInManager
+@inject IUserService userServisce
 @inject IdentityUserAccessor UserAccessor
 @inject IdentityRedirectManager RedirectManager
 
 <PageTitle>Profile</PageTitle>
 
 <h3>Profile</h3>
-<StatusMessage />
+<StatusMessage Message="@message" />
 
 <div class="row">
     <div class="col-md-6">
@@ -34,6 +36,8 @@
 </div>
 
 @code {
+    private string? message;
+
     private ApplicationUser user = default!;
     private string? username;
     private string? phoneNumber;
@@ -46,26 +50,39 @@
 
     protected override async Task OnInitializedAsync()
     {
-        user = await UserAccessor.GetRequiredUserAsync(HttpContext);
-        username = await UserManager.GetUserNameAsync(user);
-        phoneNumber = await UserManager.GetPhoneNumberAsync(user);
+         user = await UserAccessor.GetRequiredUserAsync(HttpContext);
 
-        Input.PhoneNumber ??= phoneNumber;
+        username ??= user.UserName;
+        Input.PhoneNumber ??= user.PhoneNumber;
+        phoneNumber ??= user.PhoneNumber;
     }
 
     private async Task OnValidSubmitAsync()
     {
-        if (Input.PhoneNumber != phoneNumber)
+        if (Input.PhoneNumber == phoneNumber || string.IsNullOrEmpty(Input.PhoneNumber))
         {
-            var setPhoneResult = await UserManager.SetPhoneNumberAsync(user, Input.PhoneNumber);
-            if (!setPhoneResult.Succeeded)
-            {
-                RedirectManager.RedirectToCurrentPageWithStatus("Error: Failed to set phone number.", HttpContext);
-            }
+            message = "Your phone number is unchanged.";
+            return;
+
         }
 
-        await SignInManager.RefreshSignInAsync(user);
-        RedirectManager.RedirectToCurrentPageWithStatus("Your profile has been updated", HttpContext);
+        try
+        {
+
+
+
+            await userServisce.SetPhoneNumber(new() { Id = Guid.Parse(user.Id), PhoneNumber = Input.PhoneNumber});
+
+             RedirectManager.RedirectToCurrentPageWithStatus("Your profile has been updated", HttpContext); 
+
+        }
+        catch (ServerResponseException e)
+        {
+            message = "Your phone number is unchanged.";
+
+        }
+
+        
     }
 
     private sealed class InputModel

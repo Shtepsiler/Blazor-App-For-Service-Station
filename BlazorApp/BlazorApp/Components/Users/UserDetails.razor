@@ -1,0 +1,144 @@
+﻿@page "/UserDetails/{UserId:guid}"
+@using BlazorApp.Data
+@using BlazorApp.Extensions.Exceptions
+@using BlazorApp.Extensions.ViewModels.IdentityVMs
+@using BlazorApp.Services.Interfaces
+@using Blazorise
+@using Blazorise.Bootstrap
+@using Blazorise.Icons.FontAwesome
+@inject IUserService UserService
+@inject IRoleService RoleService
+@inject NavigationManager Navigation
+@inject INotificationService NotificationService
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+<PageTitle>User Details</PageTitle>
+
+<h3>User Details</h3>
+
+@if (User == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <EditForm Model="@User" FormName="edit-user" OnValidSubmit="SaveUserDetails"  method="post">
+        <div class="card">
+            <div class="card-header">
+                <h4>@User.UserName's Details</h4>
+            </div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-3">Name</dt>
+                    <dd class="col-sm-9">
+                        <InputText @bind-Value="User.UserName" class="form-control" />
+                    </dd>
+
+                    <dt class="col-sm-3">Email</dt>
+                    <dd class="col-sm-9">
+                        <InputText @bind-Value="User.Email" class="form-control" />
+                    </dd>
+
+                    <dt class="col-sm-3">Phone Number</dt>
+                    <dd class="col-sm-9">
+                        <InputText @bind-Value="User.PhoneNumber" class="form-control" />
+                    </dd>
+
+                    <dt class="col-sm-3">Email Confirmed</dt>
+                    <dd class="col-sm-9">
+                        <InputCheckbox @bind-Value="User.EmailConfirmed" class="form-check-input" />
+                    </dd>
+
+                    <dt class="col-sm-3">Role</dt>
+                    <dd class="col-sm-9">
+                        <InputSelect @bind-Value="selectedRole" class="form-control">
+                            @foreach (var role in roles)
+                            {
+                                <option value="@role">@role</option>
+                            }
+                        </InputSelect>
+                    </dd>
+                </dl>
+                <button type="submit" class="btn btn-primary">Save</button>
+                <Button  class="btn btn-danger" @onclick="ShowModal" formmethod="dialog">Delete</Button>
+            </div>
+        </div>
+    </EditForm>
+}
+
+
+<Modal @ref="modalRef">
+    <ModalContent Centered>
+        <ModalHeader>
+            <ModalTitle>Confirm Delete</ModalTitle>
+            <CloseButton />
+        </ModalHeader>
+        <ModalBody>
+           Ви впевнені що хочете видалити корстувача?
+        </ModalBody>
+        <ModalFooter>
+            <Button Color="Color.Secondary" Clicked="@HideModal">Закрити</Button>
+            <Button Color="Color.Primary" Clicked="@DeleteUser">Видалити</Button>
+        </ModalFooter>
+    </ModalContent>
+</Modal>
+@code {
+    [Parameter]
+    public Guid UserId { get; set; }
+    [SupplyParameterFromForm(Name = "edit-user")]
+    private UserViewModel? User { get; set; } = new UserViewModel();
+    private string selectedRole{ get; set; }
+    private List<string> roles = new List<string>() { "User", "Mechanic", "Admin" };
+    private bool isDeleteDialogVisible = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        User = await UserService.GetUserWithRole(UserId);
+        selectedRole = User?.Role ?? string.Empty;
+    }
+    public Modal modalRef { get; set; }
+
+    private Task ShowModal()
+    {
+        return modalRef.Show();
+    }
+
+    private Task HideModal()
+    {
+        return modalRef.Hide();
+    }
+    private Task DeleteUser()
+    {
+        try
+        {
+            UserService.DeleteUser(Guid Id);
+        }
+
+        Navigation.NavigateTo("/Users");
+        return modalRef.Hide();
+    }
+    private async Task SaveUserDetails()
+    {
+        if (User != null)
+        {
+            try
+            {
+                if (User.Role != selectedRole)
+                {
+                    RoleService.ReAsignRole(User.Id, selectedRole);
+                }
+
+                UserService.SaveChanges(User);
+
+
+            }
+            catch (ServerResponseException e)
+            {
+                
+            }
+
+        }
+        Navigation.NavigateTo("/Users");
+    }
+
+}

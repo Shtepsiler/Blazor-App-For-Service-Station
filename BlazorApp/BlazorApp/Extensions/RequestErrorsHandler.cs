@@ -1,4 +1,4 @@
-﻿using BlazorApp.Extensions.Exceptions;
+﻿/*using BlazorApp.Extensions.Exceptions;
 using MudBlazor;
 
 namespace BlazorApp.Extensions
@@ -36,3 +36,4 @@ namespace BlazorApp.Extensions
         public RequestErrorsHandler(ISnackbar snackbar) => this.snackbar = snackbar;
     }
 }
+*/

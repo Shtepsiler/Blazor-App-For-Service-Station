@@ -1,0 +1,124 @@
+﻿@page "/ScheduleAppointment"
+@using System.Threading.Tasks
+@using BlazorApp.Extensions.ViewModels.JobsVMs
+@using BlazorApp.Extensions.ViewModels.PartsVMs
+@using BlazorApp.Services.Interfaces
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components
+@using System.ComponentModel.DataAnnotations
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@attribute [Authorize]
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IJobService JobService
+@inject IVehicleService VehicleService
+<PageTitle>Запис на візит</PageTitle>
+
+<h3>Записатися на візит до СТО</h3>
+
+<EditForm Model="@visit" FormName="hedule" OnValidSubmit="@HandleValidSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="mb-3">
+        <label for="model" class="form-label">Модель автомобіля</label>
+        <InputText id="model" class="form-control" @bind-Value="searchText" @oninput="FilterCarModels" />
+        @if (filteredCarModels.Any())
+        {
+            <ul class="list-group">
+                @foreach (var model in filteredCarModels)
+                {
+                    <li class="list-group-item" @onclick="() => SelectCarModel(model)">
+                        @model.FullModelName
+                    </li>
+                }
+            </ul>
+        }
+        <input type="hidden" @bind="visit.ModelId" />
+    </div>
+
+    <div class="mb-3">
+        <label for="date" class="form-label">Дата проблеми</label>
+        <InputDate id="date" class="form-control" @bind-Value="visit.IssueDate" />
+    </div>
+
+    <div class="mb-3">
+        <label for="description" class="form-label">Опис проблеми</label>
+        <InputTextArea id="description" class="form-control" @bind-Value="visit.Description" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Записатися</button>
+</EditForm>
+
+
+@code {
+    private CreateJobCommand visit = new CreateJobCommand();
+    private List<VehicleViewModel> carModels = new List<VehicleViewModel>();
+    private List<VehicleViewModel> filteredCarModels = new List<VehicleViewModel>();
+    private string searchText = string.Empty;
+    private string errorMessage;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+            if (user.Identity.IsAuthenticated)
+            {
+                var userIdClaim = user.FindFirst(c => c.Type == "sub")?.Value;
+                if (Guid.TryParse(userIdClaim, out Guid userId))
+                {
+                    visit.ClientId = userId;
+                }
+            }
+
+            var carModelsvms = await VehicleService.GetCarModelsAsync();
+            carModels = carModelsvms.ToList();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Помилка завантаження даних: {ex.Message}";
+        }
+    }
+
+    private void FilterCarModels(ChangeEventArgs e)
+    {
+        searchText = e.Value.ToString();
+        filteredCarModels = carModels
+            .Where(cm => cm.FullModelName.Contains(searchText, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+    }
+
+    private void SelectCarModel(VehicleViewModel model)
+    {
+        visit.ModelId = model.Id;
+        searchText = model.FullModelName;
+        filteredCarModels.Clear();
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        try
+        {
+            if (!visit.ModelId.HasValue)
+            {
+                // If the model ID is not set, create a new model entry
+                var newModel = new VehicleViewModel { FullModelName = searchText };
+                var createdModel = await VehicleService.CreateCarModelAsync(newModel);
+                visit.ModelId = createdModel.Id;
+            }
+
+            await JobService.CreateVisitAsync(visit);
+            NavigationManager.NavigateTo("/moji-roboty");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Помилка запису на візит: {ex.Message}";
+        }
+    }
+
+
+}

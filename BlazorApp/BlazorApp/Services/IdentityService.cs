@@ -1,5 +1,6 @@
-﻿using BlazorApp.Extensions;
-using BlazorApp.Extensions.ViewModels;
+﻿using BlazorApp.Components.Account.Pages.Manage;
+using BlazorApp.Extensions;
+using BlazorApp.Extensions.ViewModels.IdentityVMs;
 using BlazorApp.Services.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using MudBlazor;
@@ -21,19 +22,46 @@ namespace BlazorApp.Services
             this.httpClient = httpClient.SetHttpClient(clientFactory.CreateClient("Identity")); 
 
         }
+        public async Task<JwtViewModel> SignUpAsync(UserSignUpViewModel viewModel)
+        {
+            var response = await httpClient.PostAsync<UserSignUpViewModel, JwtViewModel>("signUp", viewModel);
+            httpClient.SetJwtToken(response.token);
+            return response;
+        }
         public async Task<JwtViewModel> SignInAsync(UserSignInViewModel viewModel)
         {
-
-           
-            var response = await httpClient.PostAsync<UserSignInViewModel, JwtViewModel>("signIn", viewModel);
-
+            var response = await httpClient.PostLoginAsync<UserSignInViewModel, JwtViewModel>("signIn", viewModel);
+            httpClient.SetJwtToken(response.token);
 
             return response;
         }
-
-        public static JwtSecurityToken ReadJwt(JwtViewModel response)
+        public async Task ResendConfirmationEmailAsync(string Email)
         {
-            return new JwtSecurityTokenHandler().ReadJwtToken(response.token);
+            var parameters = new Dictionary<string, string>
+            {/*{"Email",$"{Email}" }*/ };
+
+
+            await httpClient.PutAsync("ResendConfirmationEmail", parameters,Email);
+        }
+
+
+
+
+        public async Task ConfirmEmail(Guid Id, string code)
+        {
+            var parameters = new Dictionary<string, string>
+            {
+                {"Id",$"{Id.ToString()}" } ,
+                {"Code",$"{code}" } ,
+            };
+
+
+            await httpClient.PostAsync("ConfirmEmail", parameters);
+
+        }
+        public JwtSecurityToken ReadJwt(string tocken)
+        {
+            return new JwtSecurityTokenHandler().ReadJwtToken(tocken);
         }
 
         public async Task<ClaimsPrincipal> GenerateStateFromToken(JwtSecurityToken token)
@@ -42,27 +70,6 @@ namespace BlazorApp.Services
             var principal = new ClaimsPrincipal(identity);
             return principal;
         }
-        public async Task<ClaimsPrincipal> SignUpAsync(UserSignUpViewModel viewModel)
-                {
-
-            var response = await httpClient.PostAsync<UserSignUpViewModel, JwtViewModel>("signIn", viewModel);
-
-
-        var jwtToken = new JwtSecurityTokenHandler().ReadJwtToken(response.token);
-        var state = GenerateStateFromToken(jwtToken);
-
-
-
-
-            return await state;
-    }
-
-
-
-
-
-
-
 
     }
 }

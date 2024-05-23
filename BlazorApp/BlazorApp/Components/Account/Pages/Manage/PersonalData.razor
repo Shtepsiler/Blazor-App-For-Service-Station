@@ -2,6 +2,8 @@
 
 @inject IdentityUserAccessor UserAccessor
 
+@using BlazorApp.Services.Interfaces
+@inject IUserService userServisce
 <PageTitle>Personal Data</PageTitle>
 
 <StatusMessage />
@@ -30,5 +32,6 @@
     protected override async Task OnInitializedAsync()
     {
         _ = await UserAccessor.GetRequiredUserAsync(HttpContext);
+        
     }
 }

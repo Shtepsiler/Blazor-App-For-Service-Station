@@ -1,0 +1,123 @@
+﻿@page "/catalog"
+@using Microsoft.AspNetCore.Components.QuickGrid
+@using BlazorApp.Services.Interfaces
+@inject ICatalogService PartService
+@inject ICategoryService CategoryService
+@inject NavigationManager NavigationManager
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+<h3>Каталог запчастин</h3>
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-3">
+            <h5>Категорії</h5>
+            <ul class="list-group">
+                <li class="list-group-item" @onclick="() => FilterByCategory(null)">Всі категорії</li>
+                @foreach (var category in categories)
+                {
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span @onclick="() => FilterByCategory(category)">@category.Name</span>
+                        <button class="btn btn-sm btn-secondary" @onclick="() => EditCategory(category.Id)">Редагувати</button>
+                    </li>
+                }
+            </ul>
+            <button class="btn btn-primary mt-3" @onclick="AddCategory">Додати категорію</button>
+        </div>
+        <div class="col-md-9">
+            <div class="input-group mb-3">
+                <input type="text" class="form-control" placeholder="Назва запчастини" @bind="searchTerm">
+                <button class="btn btn-outline-secondary" type="button" @onclick="SearchParts">Пошук</button>
+            </div>
+            <button class="btn btn-primary mb-3" @onclick="AddPart">Додати запчастину</button>
+            <QuickGrid Items="@PartsQueryable">
+                <PropertyColumn Property="@(p => p.Id)" Title="ID" Sortable="true"></PropertyColumn>
+                <PropertyColumn Property="@(p => p.Name)" Title="Назва" Sortable="true"></PropertyColumn>
+                <PropertyColumn Property="@(p => p.CategoryName)" Title="Категорія" Sortable="true"></PropertyColumn>
+                <PropertyColumn Property="@(p => p.Price)" Title="Ціна" Sortable="true"></PropertyColumn>
+                <TemplateColumn Title="Дії">
+                    <ChildContent Context="part">
+                        <AuthorizeView Roles="Admin">
+                        <button class="btn btn-primary" @onclick="() => EditPart(part.Id)">Редагувати</button>
+                        </AuthorizeView>
+                    </ChildContent>
+                </TemplateColumn>
+            </QuickGrid>
+        </div>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromQuery]
+    public Guid orderId { get; set; }
+
+    private List<PartModel> parts = new List<PartModel>();
+    private List<PartModel> filteredParts = new List<PartModel>();
+    private IQueryable<PartModel> PartsQueryable = Enumerable.Empty<PartModel>().AsQueryable();
+    private List<CategoryModel> categories = new List<CategoryModel>();
+    private string searchTerm = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+     //   parts = await PartService.GetAllPartsAsync();
+       // categories = await CategoryService.GetAllCategoriesAsync();
+        filteredParts = parts;
+        PartsQueryable = filteredParts.AsQueryable();
+    }
+
+    private void SearchParts()
+    {
+        filteredParts = parts
+            .Where(p => string.IsNullOrEmpty(searchTerm) || p.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+        PartsQueryable = filteredParts.AsQueryable();
+    }
+
+    private void FilterByCategory(CategoryModel category)
+    {
+        if (category == null)
+        {
+            filteredParts = parts;
+        }
+        else
+        {
+            filteredParts = parts.Where(p => p.CategoryId == category.Id).ToList();
+        }
+        PartsQueryable = filteredParts.AsQueryable();
+    }
+
+    private void AddCategory()
+    {
+        NavigationManager.NavigateTo("/edit-category");
+    }
+
+    private void EditCategory(int categoryId)
+    {
+        NavigationManager.NavigateTo($"/edit-category/{categoryId}");
+    }
+
+    private void AddPart()
+    {
+        NavigationManager.NavigateTo("/edit-part");
+    }
+
+    private void EditPart(int partId)
+    {
+        NavigationManager.NavigateTo($"/edit-part/{partId}");
+    }
+
+    public class PartModel
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public int CategoryId { get; set; }
+        public string CategoryName { get; set; }
+        public decimal Price { get; set; }
+    }
+
+    public class CategoryModel
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+    }
+}

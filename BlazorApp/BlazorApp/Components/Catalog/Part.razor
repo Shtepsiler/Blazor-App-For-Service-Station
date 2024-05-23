@@ -1,0 +1,83 @@
+﻿@page "/edit-part"
+@page "/edit-part/{partId:int}"
+@using BlazorApp.Services.Interfaces
+@inject ICatalogService PartService
+@inject ICategoryService CategoryService
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JS
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+<h3>@(partId.HasValue ? "Редагувати запчастину" : "Додати запчастину")</h3>
+
+<EditForm Model="@part" OnValidSubmit="SavePart">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+    <div class="form-group">
+        <label for="name">Назва</label>
+        <InputText id="name" class="form-control" @bind-Value="part.Name" />
+    </div>
+    <div class="form-group">
+        <label for="category">Категорія</label>
+        <InputSelect id="category" class="form-control" @bind-Value="part.CategoryId">
+            @foreach (var category in categories)
+            {
+                <option value="@category.Id">@category.Name</option>
+            }
+        </InputSelect>
+    </div>
+    <div class="form-group">
+        <label for="price">Ціна</label>
+        <InputNumber id="price" class="form-control" @bind-Value="part.Price" />
+    </div>
+    <button type="submit" class="btn btn-primary">@((partId.HasValue ? "Зберегти" : "Додати"))</button>
+    <button type="button" class="btn btn-secondary" @onclick="Cancel">Скасувати</button>
+</EditForm>
+
+@code {
+    [Parameter] public int? partId { get; set; }
+    private PartModel part = new PartModel();
+    private List<CategoryModel> categories = new List<CategoryModel>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        //categories = await CategoryService.GetAllCategoriesAsync();
+        if (partId.HasValue)
+        {
+          //  part = await PartService.GetPartByIdAsync(partId.Value) ?? new PartModel();
+        }
+    }
+
+    private async Task SavePart()
+    {
+        if (partId.HasValue)
+        {
+        //    await PartService.UpdatePartAsync(part);
+        }
+        else
+        {
+        //    await PartService.AddPartAsync(part);
+        }
+
+        await JS.InvokeVoidAsync("alert", "Запчастина успішно збережена!");
+        NavigationManager.NavigateTo("/catalog");
+    }
+
+    private void Cancel()
+    {
+        NavigationManager.NavigateTo("/catalog");
+    }
+
+    public class PartModel
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public int CategoryId { get; set; }
+        public decimal Price { get; set; }
+    }
+
+    public class CategoryModel
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+    }
+}

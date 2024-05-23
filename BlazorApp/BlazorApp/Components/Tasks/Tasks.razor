@@ -1,0 +1,75 @@
+﻿@page "/tasks"
+@using BlazorApp.Data
+@using BlazorApp.Extensions.ViewModels.IdentityVMs
+@using BlazorApp.Extensions.ViewModels.JobsVMs
+@using BlazorApp.Services.Interfaces
+@using Microsoft.AspNetCore.Components.QuickGrid
+@inject ITasksService TaskService
+@inject IUserService UserService
+@inject NavigationManager Navigation
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+<h3>Tasks</h3>
+<AuthorizeView Roles="Admin">
+<div class="mb-3">
+    <label for="mechanicSelect" class="form-label">Select Mechanic:</label>
+    <InputSelect @bind-Value="selectedMechanic" id="mechanicSelect" class="form-select">
+        <option value="">All</option>
+        @foreach (var mechanic in mechanics)
+        {
+            <option value="@mechanic.Id">@mechanic.UserName</option>
+        }
+    </InputSelect>
+</div>
+
+    <button class="btn btn-primary" @onclick="AddTask">Add Task</button>
+    </AuthorizeView>
+
+<QuickGrid Items="@tasks">
+    <PropertyColumn Property="@(t => t.Name)" Title="Name" Sortable="true"></PropertyColumn>
+    <PropertyColumn Property="@(t => t.Task.Take(30).Append('.').Append('.').Append('.'))" Title="Description" Sortable="true"></PropertyColumn>
+    <PropertyColumn Property="@(t => t.Status)" Title="Status" Sortable="true"></PropertyColumn>
+    <TemplateColumn Title="Mechanic">
+        <span>@(mechanics.Where(p=>p.Id==context.Id).Select(p=>p.UserName).FirstOrDefault())</span>
+    </TemplateColumn>
+    <TemplateColumn Title="Actions">
+        <button class="btn btn-secondary" @onclick="() => EditTask(context.Id)">Edit</button>
+        <button class="btn btn-danger" @onclick="() => DeleteTask(context.Id)">Delete</button>
+    </TemplateColumn>
+</QuickGrid>
+
+@code {
+    private IQueryable<TaskViewModel> tasks = Enumerable.Empty < TaskViewModel >().AsQueryable();
+    private List<MechanicViewModel> mechanics;
+    private Guid selectedMechanic;
+
+    protected override async Task OnInitializedAsync()
+    {
+        tasks =  TaskService.GetTasks().Result.AsQueryable();
+        mechanics = UserService.GetMechanics().Result.ToList() ;
+
+    }
+
+    private async Task LoadTasks()
+    {
+        tasks = (selectedMechanic == null || selectedMechanic == Guid.Empty) ?
+                 TaskService.GetTasks().Result.AsQueryable() :
+                 TaskService.GetTasksByMechanic(selectedMechanic).Result.AsQueryable();
+    }
+
+    private void AddTask()
+    {
+        Navigation.NavigateTo("/tasks/add");
+    }
+
+    private void EditTask(Guid taskId)
+    {
+        Navigation.NavigateTo($"/tasks/edit/{taskId}");
+    }
+
+    private async System.Threading.Tasks.Task DeleteTask(Guid taskId)
+    {
+        await TaskService.DeleteTask(taskId);
+        await LoadTasks();
+    }
+}

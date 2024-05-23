@@ -1,0 +1,207 @@
+﻿@page "/jobs"
+
+@using BlazorApp.Components.Account
+@using BlazorApp.Services.Interfaces
+@using Microsoft.AspNetCore.Components.QuickGrid
+@using Microsoft.AspNetCore.Components.Routing
+@using Microsoft.AspNetCore.Components.Authorization
+@using Blazorise
+@using System.Security.Claims
+
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JS
+@inject IJobService JobService
+
+<PageTitle>Адміністрування робіт</PageTitle>
+
+<h3>Роботи</h3>
+
+<AuthorizeView Roles="Admin">
+    <div>
+        <Button @onclick="ShowAddJobModal">Додати нову роботу</Button>
+
+        <Select TItem="string" @bind-SelectedValue="selectedStatus" @bind-SelectedValue:after="FilterJobs">
+            @foreach (var status in statuses)
+            {
+                <SelectItem Value="@status">@status</SelectItem>
+            }
+        </Select>
+
+        <QuickGrid Items="@jobModelsQierable" RowClick="OnRowClick">
+            <PropertyColumn Property="@(p=>p.Id)" Title="ID" />
+            <PropertyColumn Property="@(p=>p.CarModel)" Title="Модель автомобіля" />
+            <PropertyColumn Property="@(p=>p.ProblemDescription)" Title="Опис проблеми" />
+            <PropertyColumn Property="@(p=>p.VisitDate)" Title="Дата візиту" />
+            <PropertyColumn Property="@(p=>p.Status)" Title="Статус" />
+            <TemplateColumn Title="Дії">
+                <ChildContent Context="job">
+                    <Button @onclick="() => OnViewJob(job)">Переглянути</Button>
+                </ChildContent>
+            </TemplateColumn>
+        </QuickGrid>
+    </div>
+</AuthorizeView>
+<AuthorizeView Roles="Mechanic">
+
+    <div>
+
+        <Select TItem="string" @bind-SelectedValue="selectedStatus" @bind-SelectedValue:after="FilterJobs">
+            @foreach (var status in statuses)
+            {
+                <SelectItem Value="@status">@status</SelectItem>
+            }
+        </Select>
+
+        <QuickGrid Items="@jobModelsQierable" RowClick="OnRowClick">
+            <PropertyColumn Property="@(p=>p.Id)" Title="ID" />
+            <PropertyColumn Property="@(p=>p.CarModel)" Title="Модель автомобіля" />
+            <PropertyColumn Property="@(p=>p.ProblemDescription)" Title="Опис проблеми" />
+            <PropertyColumn Property="@(p=>p.VisitDate)" Title="Дата візиту" />
+            <PropertyColumn Property="@(p=>p.Status)" Title="Статус" />
+            <TemplateColumn Title="Дії">
+                <ChildContent Context="job">
+                    <Button @onclick="() => OnViewJob(job)">Переглянути</Button>
+                </ChildContent>
+            </TemplateColumn>
+        </QuickGrid>
+    </div>
+</AuthorizeView>
+<Modal @bind-Visible="isAddJobModalVisible">
+    <ModalContent>
+        <ModalHeader>
+            <h5 class="modal-title">Нова робота</h5>
+            <Button CloseButton @onclick="() => isAddJobModalVisible = false"></Button>
+        </ModalHeader>
+        <ModalBody>
+            <div class="form-group">
+                <label for="carModel">Модель автомобіля</label>
+                <InputText id="carModel" @bind-Value="newJob.CarModel" />
+            </div>
+            <div class="form-group">
+                <label for="problemDescription">Опис проблеми</label>
+                <InputText id="problemDescription" @bind-Value="newJob.ProblemDescription" />
+            </div>
+            <div class="form-group">
+                <label for="visitDate">Дата візиту</label>
+                <InputDate id="visitDate" @bind-Value="newJob.VisitDate" />
+            </div>
+            <div class="form-group">
+                <label for="status">Статус</label>
+                <Select @bind-SelectedValue="newJob.Status">
+                    @foreach (var status in statuses.Skip(1))
+                    {
+                        <SelectItem Value="@status">@status</SelectItem>
+                    }
+                </Select>
+            </div>
+        </ModalBody>
+        <ModalFooter>
+            <Button @onclick="SaveJob">Зберегти</Button>
+            <Button @onclick="() => isAddJobModalVisible = false">Закрити</Button>
+        </ModalFooter>
+    </ModalContent>
+</Modal>
+
+@code {
+    private List<JobModel> jobs = new();
+    private List<JobModel> filteredJobs = new();
+    private IQueryable<JobModel> jobModelsQierable = Enumerable.Empty<JobModel>().AsQueryable();
+    private List<string> statuses = new() { "all", "newjobs", "inProgress", "completed" };
+    private string selectedStatus = "all";
+    private bool isAddJobModalVisible = false;
+    private JobModel newJob = new JobModel();
+    private JobModel selectedJob = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authenticationState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authenticationState.User;
+        if (user.Identity.IsAuthenticated)
+        {
+            var roles = user.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => c.Value).ToList();
+            // Опрацюйте ролі користувача тут
+        }
+        //jobs = await JobService.GetAllJobsAsync();   
+
+
+        FilterJobs();
+
+        jobModelsQierable = jobs.AsQueryable();
+    }
+
+    private void FilterJobs()
+    {
+        if (selectedStatus == "newjobs")
+        {
+            filteredJobs = jobs.Where(job => job.Status == "newjobs" || job.Mechanic == null).OrderByDescending(job => job.VisitDate).ToList();
+        }
+        else if (selectedStatus == "inProgress")
+        {
+            filteredJobs = jobs.Where(job => job.Status == "inProgress").OrderByDescending(job => job.VisitDate).ToList();
+        }
+        else if (selectedStatus == "completed")
+        {
+            filteredJobs = jobs.Where(job => job.Status == "completed").OrderByDescending(job => job.VisitDate).ToList();
+        }
+        else
+        {
+            filteredJobs = jobs.OrderByDescending(job => job.VisitDate).ToList();
+        }
+        jobModelsQierable = filteredJobs.AsQueryable();
+    }
+
+    private void ShowAddJobModal()
+    {
+        newJob = new JobModel();
+        isAddJobModalVisible = true;
+    }
+
+    private void SaveJob()
+    {
+        if (newJob == null)
+        {
+            jobs.Add(newJob);
+        }
+        else
+        {
+            var job = jobs.FirstOrDefault(j => j.Id == newJob.Id);
+            if (job != null)
+            {
+                job.CarModel = newJob.CarModel;
+                job.ProblemDescription = newJob.ProblemDescription;
+                job.VisitDate = newJob.VisitDate;
+                job.Status = newJob.Status;
+            }
+        }
+
+        FilterJobs();
+        isAddJobModalVisible = false;
+    }
+
+    private void NavigateToJob(Guid jobId)
+    {
+        NavigationManager.NavigateTo($"/job-info/{jobId.ToString()}");
+    }
+
+    private void OnRowClick(JobModel job)
+    {
+        NavigateToJob(job.Id);
+    }
+
+    private void OnViewJob(JobModel job)
+    {
+        NavigateToJob(job.Id);
+    }
+
+    public class JobModel
+    {
+        public Guid Id { get; set; }
+        public string CarModel { get; set; }
+        public string ProblemDescription { get; set; }
+        public DateTime VisitDate { get; set; }
+        public string Status { get; set; }
+        public string Mechanic { get; set; }
+    }
+}

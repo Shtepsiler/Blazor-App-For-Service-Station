@@ -1,0 +1,58 @@
+﻿@page "/edit-category"
+@page "/edit-category/{categoryId:Guid}"
+@using BlazorApp.Services.Interfaces
+@inject ICategoryService CategoryService
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JS
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+<h3>@(categoryId.HasValue ? "Редагувати категорію" : "Додати категорію")</h3>
+
+<EditForm Model="@category" OnValidSubmit="SaveCategory">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+    <div class="form-group">
+        <label for="name">Назва</label>
+        <InputText id="name" class="form-control" @bind-Value="category.Name" />
+    </div>
+    <button type="submit" class="btn btn-primary">@((categoryId.HasValue ? "Зберегти" : "Додати"))</button>
+    <button type="button" class="btn btn-secondary" @onclick="Cancel">Скасувати</button>
+</EditForm>
+
+@code {
+    [Parameter] public Guid? categoryId { get; set; }
+    private CategoryModel category = new CategoryModel();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (categoryId.HasValue)
+        {
+           // category = await CategoryService.GetCategoryByIdAsync(categoryId.Value) ?? new CategoryModel();
+        }
+    }
+
+    private async Task SaveCategory()
+    {
+        if (categoryId.HasValue)
+        {
+         //   await CategoryService.UpdateCategoryAsync(category);
+        }
+        else
+        {
+       //     await CategoryService.AddCategoryAsync(category);
+        }
+
+        NavigationManager.NavigateTo("/catalog");
+    }
+
+    private void Cancel()
+    {
+        NavigationManager.NavigateTo("/catalog");
+    }
+
+    public class CategoryModel
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+    }
+}

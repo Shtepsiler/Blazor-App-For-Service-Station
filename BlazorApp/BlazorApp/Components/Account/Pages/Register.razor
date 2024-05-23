@@ -10,10 +10,7 @@
 @using BlazorApp.Services.Interfaces
 @using Microsoft.AspNetCore.Authentication
 
-@inject UserManager<ApplicationUser> UserManager
-@inject IUserStore<ApplicationUser> UserStore
-@inject SignInManager<ApplicationUser> SignInManager
-@inject IEmailSender<ApplicationUser> EmailSender
+
 @inject ILogger<Register> Logger
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
@@ -25,7 +22,7 @@
 
 <div class="row">
     <div class="col-md-4">
-        <StatusMessage Message="@Message" />
+        <StatusMessage Message="@errorMessage" />
         <EditForm Model="Input" asp-route-returnUrl="@ReturnUrl" method="post" OnValidSubmit="RegisterUser" FormName="register">
             <DataAnnotationsValidator />
             <h2>Create a new account.</h2>
@@ -54,17 +51,11 @@
             <button type="submit" class="w-100 btn btn-lg btn-primary">Register</button>
         </EditForm>
     </div>
-    <div class="col-md-6 col-md-offset-2">
-        <section>
-            <h3>Use another service to register.</h3>
-            <hr />
-            <ExternalLoginPicker />
-        </section>
-    </div>
+
 </div>
 
 @code {
-    private IEnumerable<IdentityError>? identityErrors;
+    private string? errorMessage;
 
     [CascadingParameter]
     private HttpContext HttpContext { get; set; } = default!;
@@ -75,7 +66,6 @@
     [SupplyParameterFromQuery]
     private string? ReturnUrl { get; set; }
 
-    private string? Message => identityErrors is null ? null : $"Error: {string.Join(", ", identityErrors.Select(error => error.Description))}";
 
     public async Task RegisterUser(EditContext editContext)
     {
@@ -84,46 +74,35 @@
 
             var res = await identityservice.SignUpAsync(new() { Email = Input.Email, Password = Input.Password, UserName = Input.UserName });
 
-
-            await HttpContext.SignInAsync(IdentityConstants.ApplicationScheme, res);
-
-            RedirectManager.RedirectTo(ReturnUrl);
-
-          
-
-
-
-
+            RedirectManager.RedirectTo("/Account/CheckYourEmail");
 
         }
-        catch (NotAuthrizeExeption e)
+  
+        catch (EntityNotFoundException e)
         {
             RedirectManager.RedirectTo("/Account/InvalidUser");
-
+        }
+        catch (ServerResponseException e)
+        {
+            errorMessage = e.Message;
+        }
+        catch (EmailNotConfirmedException e)
+        {
+            errorMessage = e.Message;
+        }
+        catch (BlazorApp.Extensions.Exceptions.ValidationException e)
+        {
+            if (e.Errors != null)
+            {
+                errorMessage = string.Join("; ", e.Errors.SelectMany(error => error.Value.Select(msg => $"{error.Key}: {msg}")));
+            }
+            else
+            {
+                errorMessage = "Validation error occurred, but no error details were provided.";
+            }
         }
     }
 
-    private ApplicationUser CreateUser()
-    {
-        try
-        {
-            return Activator.CreateInstance<ApplicationUser>();
-        }
-        catch
-        {
-            throw new InvalidOperationException($"Can't create an instance of '{nameof(ApplicationUser)}'. " +
-                $"Ensure that '{nameof(ApplicationUser)}' is not an abstract class and has a parameterless constructor.");
-        }
-    }
-
-    private IUserEmailStore<ApplicationUser> GetEmailStore()
-    {
-        if (!UserManager.SupportsUserEmail)
-        {
-            throw new NotSupportedException("The default UI requires a user store with email support.");
-        }
-        return (IUserEmailStore<ApplicationUser>)UserStore;
-    }
     protected override async Task OnInitializedAsync()
     {
         if (HttpMethods.IsGet(HttpContext.Request.Method))

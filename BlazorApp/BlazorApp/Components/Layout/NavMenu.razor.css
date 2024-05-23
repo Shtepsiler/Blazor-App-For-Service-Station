@@ -1,8 +1,8 @@
 .navbar-toggler {
     appearance: none;
     cursor: pointer;
-    width: 3.5rem;
-    height: 2.5rem;
+    width: 4.5rem;
+    height: 3.5rem;
     color: white;
     position: absolute;
     top: 0.5rem;
@@ -28,6 +28,7 @@
     display: inline-block;
     position: relative;
     width: 1.25rem;
+    height: 1.25rem;
     height: 1.25rem;
     margin-right: 0.75rem;
     top: -1px;
@@ -71,15 +72,8 @@
     padding-bottom: 0.5rem;
 }
 
-    .nav-item:first-of-type {
-        padding-top: 1rem;
-    }
-
-    .nav-item:last-of-type {
-        padding-bottom: 1rem;
-    }
-
-    .nav-item ::deep .nav-link {
+    .nav-item ::deep .nav-link { 
+        font-size: 20px;
         color: #d7d7d7;
         background: none;
         border: none;
@@ -123,3 +117,27 @@
         overflow-y: auto;
     }
 }
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 5px;
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+    .header img {
+        height: 70px;
+        margin-right: 20px;
+    }
+
+    .header .navbar-nav {
+        display: flex;
+        align-items: center;
+    }
+
+    .header .auth-links {
+        display: flex;
+        align-items: center;
+    }

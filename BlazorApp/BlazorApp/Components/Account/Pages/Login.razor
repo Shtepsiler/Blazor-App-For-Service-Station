@@ -8,8 +8,8 @@
 @using BlazorApp.Extensions.ViewModels
 @using BlazorApp.Services.Interfaces
 @using System.Net
+@using System
 
-@inject SignInManager<ApplicationUser> SignInManager
 @inject ILogger<Login> Logger
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
@@ -53,18 +53,8 @@
                     <p>
                         <a href="@(NavigationManager.GetUriWithQueryParameters("Account/Register", new Dictionary<string, object?> { ["ReturnUrl"] = ReturnUrl }))">Register as a new user</a>
                     </p>
-                    <p>
-                        <a href="Account/ResendEmailConfirmation">Resend email confirmation</a>
-                    </p>
                 </div>
             </EditForm>
-        </section>
-    </div>
-    <div class="col-md-6 col-md-offset-2">
-        <section>
-            <h3>Use another service to log in.</h3>
-            <hr />
-            <ExternalLoginPicker />
         </section>
     </div>
 </div>
@@ -98,23 +88,36 @@
 
         try
         {
-
             var res = await identityservice.SignInAsync(new() { Email = Input.Email, Password = Input.Password, RememberMe = Input.RememberMe });
 
+            await HttpContext.SignInAsync(IdentityConstants.ApplicationScheme, await identityservice.GenerateStateFromToken(identityservice.ReadJwt(res.token)));
 
-            await  HttpContext.SignInAsync(IdentityConstants.ApplicationScheme, res);
-
-
-                
-                
-                
-                RedirectManager.RedirectTo(ReturnUrl);
+            RedirectManager.RedirectTo(ReturnUrl);
         }
-        catch (NotAuthrizeExeption e)
+        catch (EntityNotFoundException e)
         {
             RedirectManager.RedirectTo("/Account/InvalidUser");
-
         }
+        catch (ServerResponseException e)
+        {
+            errorMessage = e.Message;
+        }
+        catch (EmailNotConfirmedException e)
+        {
+            errorMessage = e.Message;
+        }
+        catch (BlazorApp.Extensions.Exceptions.ValidationException e)
+        {
+            if (e.Errors != null)
+            {
+                errorMessage = string.Join("; ", e.Errors.SelectMany(error => error.Value.Select(msg => $"{error.Key}: {msg}")));
+            }
+            else
+            {
+                errorMessage = "Validation error occurred, but no error details were provided.";
+            }
+        }
+
      
 
 

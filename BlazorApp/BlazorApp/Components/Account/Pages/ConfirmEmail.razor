@@ -1,48 +1,42 @@
 ﻿@page "/Account/ConfirmEmail"
 
-@using System.Text
+@using System.ComponentModel.DataAnnotations
 @using Microsoft.AspNetCore.Identity
-@using Microsoft.AspNetCore.WebUtilities
 @using BlazorApp.Data
-
-@inject UserManager<ApplicationUser> UserManager
+@using BlazorApp.Services.Interfaces
+@inject IIdentityService isentityServisce
 @inject IdentityRedirectManager RedirectManager
 
-<PageTitle>Confirm email</PageTitle>
+<PageTitle>Confirm Email</PageTitle>
 
-<h1>Confirm email</h1>
-<StatusMessage Message="@statusMessage" />
+<h3>Confir mEmail</h3>
+<StatusMessage Message="@message" />
+<div class="row">
+    <div class="col-md-6">
+    </div>
+</div>
 
 @code {
-    private string? statusMessage;
-
-    [CascadingParameter]
-    private HttpContext HttpContext { get; set; } = default!;
+    private string? message;
 
     [SupplyParameterFromQuery]
-    private string? UserId { get; set; }
+    private string? Id { get; set; }
 
     [SupplyParameterFromQuery]
     private string? Code { get; set; }
 
+
+
+
     protected override async Task OnInitializedAsync()
     {
-        if (UserId is null || Code is null)
-        {
-            RedirectManager.RedirectTo("");
-        }
 
-        var user = await UserManager.FindByIdAsync(UserId);
-        if (user is null)
+        try
         {
-            HttpContext.Response.StatusCode = StatusCodes.Status404NotFound;
-            statusMessage = $"Error loading user with ID {UserId}";
+            await isentityServisce.ConfirmEmail(Guid.Parse(Id), Code);
+            message = "Email confirmed";
         }
-        else
-        {
-            var code = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(Code));
-            var result = await UserManager.ConfirmEmailAsync(user, code);
-            statusMessage = result.Succeeded ? "Thank you for confirming your email." : "Error confirming your email.";
-        }
+        catch { }
+
     }
 }

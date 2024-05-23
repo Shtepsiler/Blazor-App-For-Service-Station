@@ -6,11 +6,14 @@
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.AspNetCore.WebUtilities
 @using BlazorApp.Data
+@using System.Security.Claims
 
-@inject UserManager<ApplicationUser> UserManager
-@inject IEmailSender<ApplicationUser> EmailSender
+@using BlazorApp.Services.Interfaces
+@inject IUserService userServisce
+@inject IIdentityService identityService
 @inject IdentityUserAccessor UserAccessor
 @inject NavigationManager NavigationManager
+
 
 <PageTitle>Manage email</PageTitle>
 
@@ -68,8 +71,8 @@
     protected override async Task OnInitializedAsync()
     {
         user = await UserAccessor.GetRequiredUserAsync(HttpContext);
-        email = await UserManager.GetEmailAsync(user);
-        isEmailConfirmed = await UserManager.IsEmailConfirmedAsync(user);
+        isEmailConfirmed = user.EmailConfirmed;
+        email ??= user.Email; 
 
         Input.NewEmail ??= email;
     }
@@ -81,15 +84,15 @@
             message = "Your email is unchanged.";
             return;
         }
+        try
+        {
+            await userServisce.ChangeEmail(Guid.Parse(user.Id),Input.NewEmail);
+        }
+        catch
+        {
+            message = "Uneble to change email";
 
-        var userId = await UserManager.GetUserIdAsync(user);
-        var code = await UserManager.GenerateChangeEmailTokenAsync(user, Input.NewEmail);
-        code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
-        var callbackUrl = NavigationManager.GetUriWithQueryParameters(
-            NavigationManager.ToAbsoluteUri("Account/ConfirmEmailChange").AbsoluteUri,
-            new Dictionary<string, object?> { ["userId"] = userId, ["email"] = Input.NewEmail, ["code"] = code });
-
-        await EmailSender.SendConfirmationLinkAsync(user, Input.NewEmail, HtmlEncoder.Default.Encode(callbackUrl));
+        }
 
         message = "Confirmation link to change email sent. Please check your email.";
     }
@@ -100,16 +103,13 @@
         {
             return;
         }
-
-        var userId = await UserManager.GetUserIdAsync(user);
-        var code = await UserManager.GenerateEmailConfirmationTokenAsync(user);
-        code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
-        var callbackUrl = NavigationManager.GetUriWithQueryParameters(
-            NavigationManager.ToAbsoluteUri("Account/ConfirmEmail").AbsoluteUri,
-            new Dictionary<string, object?> { ["userId"] = userId, ["code"] = code });
-
-        await EmailSender.SendConfirmationLinkAsync(user, email, HtmlEncoder.Default.Encode(callbackUrl));
-
+        try{
+            await identityService.ResendConfirmationEmailAsync(Input.NewEmail);
+        }
+        catch
+        {
+            message = "Invalid emil";
+        }
         message = "Verification email sent. Please check your email.";
     }
 

@@ -1,0 +1,65 @@
+﻿@page "/myjobs"
+@inject HttpClient Http
+@using System.Net.Http.Json
+@using Microsoft.AspNetCore.Components.QuickGrid
+
+<PageTitle>Мої візити</PageTitle>
+
+<h3>Мої візити</h3>
+
+<EditForm Model="@searchModel" OnValidSubmit="@SearchVisits">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="mb-3">
+        <label for="search" class="form-label">Пошук</label>
+        <InputText id="search" class="form-control" @bind-Value="searchModel.SearchTerm" />
+    </div>
+    <button type="submit" class="btn btn-primary">Пошук</button>
+</EditForm>
+
+@if (visits != null)
+{
+    <QuickGrid Items="@visitsQueryable" Class="mt-4">
+        <PropertyColumn Property="@(v => v.CarModel)" Title="Модель автомобіля" />
+        <PropertyColumn Property="@(v => v.ProblemDescription)" Title="Опис проблеми" />
+        <PropertyColumn Property="@(v => v.VisitDate)" Title="Дата візиту" />
+        <TemplateColumn Title="Actions">
+      
+        </TemplateColumn>
+    </QuickGrid>
+}
+
+@code {
+    private SearchModel searchModel = new SearchModel();
+    private List<VisitModel> visits;
+    private IQueryable<VisitModel> visitsQueryable;
+
+    private async Task SearchVisits()
+    {
+        // Приклад запиту до API для отримання робіт користувача
+        visits = await Http.GetFromJsonAsync<List<VisitModel>>($"api/visits?search={searchModel.SearchTerm}");
+        visitsQueryable = visits.AsQueryable();
+    }
+
+    private void ViewVisitDetails(int visitId)
+    {
+        NavigationManager.NavigateTo($"/myjobs/job/{visitId}");
+    }
+
+    [Inject]
+    private NavigationManager NavigationManager { get; set; }
+
+    public class SearchModel
+    {
+        public string SearchTerm { get; set; }
+    }
+
+    public class VisitModel
+    {
+        public int Id { get; set; }
+        public string CarModel { get; set; }
+        public string ProblemDescription { get; set; }
+        public DateTime VisitDate { get; set; }
+    }
+}

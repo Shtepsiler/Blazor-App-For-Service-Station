@@ -2,13 +2,14 @@
 {
     public class EntityNotFoundException : Exception
     {
-        public string Error { get; set; }
-
-        public EntityNotFoundException() : this(default)
+        public EntityNotFoundException(string message)
+         : base(message)
         {
         }
 
-        public EntityNotFoundException(string error) : base() =>
-            Error = error;
+        public EntityNotFoundException()
+            : base()
+        {
+        }
     }
 }
