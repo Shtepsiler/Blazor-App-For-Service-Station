@@ -1,12 +1,13 @@
 ﻿@page "/ScheduleAppointment"
 @using System.Threading.Tasks
+@using BlazorApp.Extensions.ViewModels.CatalogVMs
 @using BlazorApp.Extensions.ViewModels.JobsVMs
-@using BlazorApp.Extensions.ViewModels.PartsVMs
 @using BlazorApp.Services.Interfaces
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.Forms
 @using Microsoft.AspNetCore.Components
 @using System.ComponentModel.DataAnnotations
+@using System.Security.Claims
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 @attribute [Authorize]
 @inject NavigationManager NavigationManager
@@ -39,7 +40,7 @@
     </div>
 
     <div class="mb-3">
-        <label for="date" class="form-label">Дата проблеми</label>
+        <label for="date" class="form-label">Дата запису</label>
         <InputDate id="date" class="form-control" @bind-Value="visit.IssueDate" />
     </div>
 
@@ -68,8 +69,8 @@
             var user = authState.User;
             if (user.Identity.IsAuthenticated)
             {
-                var userIdClaim = user.FindFirst(c => c.Type == "sub")?.Value;
-                if (Guid.TryParse(userIdClaim, out Guid userId))
+                var Id = user.Claims.Where(c => c.Type == ClaimTypes.NameIdentifier).Select(c => c.Value).FirstOrDefault();
+                if (Guid.TryParse(Id, out Guid userId))
                 {
                     visit.ClientId = userId;
                 }
@@ -112,7 +113,7 @@
             }
 
             await JobService.CreateVisitAsync(visit);
-            NavigationManager.NavigateTo("/moji-roboty");
+            NavigationManager.NavigateTo("/myjobs");
         }
         catch (Exception ex)
         {

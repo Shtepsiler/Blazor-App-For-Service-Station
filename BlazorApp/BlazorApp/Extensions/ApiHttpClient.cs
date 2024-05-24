@@ -264,7 +264,7 @@ namespace BlazorApp.Extensions
         }
         private void ValidateAndLogUri(string requestUri)
         {
-            if (string.IsNullOrWhiteSpace(requestUri) || !Uri.IsWellFormedUriString(requestUri, UriKind.RelativeOrAbsolute))
+            if ((requestUri is null) || !Uri.IsWellFormedUriString(requestUri, UriKind.RelativeOrAbsolute))
             {
                 throw new UriFormatException($"Invalid URI: The format of the URI '{requestUri}' could not be determined.");
             }

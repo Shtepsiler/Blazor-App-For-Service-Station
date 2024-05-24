@@ -12,5 +12,7 @@
         public int? PriceRegular { get; set; }
         public string? PartTitle { get; set; }
         public string? PartAttributes { get; set; }
+        public Guid CategoryId { get; set; }
+
     }
 }

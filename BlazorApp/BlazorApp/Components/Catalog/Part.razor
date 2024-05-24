@@ -1,61 +1,67 @@
 ﻿@page "/edit-part"
-@page "/edit-part/{partId:int}"
+@page "/edit-part/{partId:guid}"
+@using BlazorApp.Extensions.ViewModels.CatalogVMs
 @using BlazorApp.Services.Interfaces
-@inject ICatalogService PartService
+@inject IPartsService PartService
 @inject ICategoryService CategoryService
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JS
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 
-<h3>@(partId.HasValue ? "Редагувати запчастину" : "Додати запчастину")</h3>
+<h3>@((Guid.Empty  == partId || partId == null) ? "Редагувати запчастину" : "Додати запчастину")</h3>
 
 <EditForm Model="@part" OnValidSubmit="SavePart">
     <DataAnnotationsValidator />
     <ValidationSummary />
     <div class="form-group">
         <label for="name">Назва</label>
-        <InputText id="name" class="form-control" @bind-Value="part.Name" />
+        <InputText id="name" class="form-control" @bind-Value="part.PartName" />
     </div>
     <div class="form-group">
         <label for="category">Категорія</label>
         <InputSelect id="category" class="form-control" @bind-Value="part.CategoryId">
             @foreach (var category in categories)
             {
-                <option value="@category.Id">@category.Name</option>
+                <option value="@category.Id">@category.Title</option>
             }
         </InputSelect>
     </div>
     <div class="form-group">
         <label for="price">Ціна</label>
-        <InputNumber id="price" class="form-control" @bind-Value="part.Price" />
+        <InputNumber id="price" class="form-control" @bind-Value="part.PriceRegular" />
     </div>
-    <button type="submit" class="btn btn-primary">@((partId.HasValue ? "Зберегти" : "Додати"))</button>
+    <button type="submit" class="btn btn-primary">@((Guid.Empty == partId || partId == null) ? "Зберегти" : "Додати"))</button>
     <button type="button" class="btn btn-secondary" @onclick="Cancel">Скасувати</button>
 </EditForm>
 
 @code {
-    [Parameter] public int? partId { get; set; }
-    private PartModel part = new PartModel();
-    private List<CategoryModel> categories = new List<CategoryModel>();
+    [Parameter] public Guid? partId { get; set; }
+    private PartViewModel part = new PartViewModel();
+    private List<CategoryViewModel> categories = new List<CategoryViewModel>();
 
     protected override async Task OnInitializedAsync()
     {
-        //categories = await CategoryService.GetAllCategoriesAsync();
-        if (partId.HasValue)
+        try
         {
-          //  part = await PartService.GetPartByIdAsync(partId.Value) ?? new PartModel();
+        var categoriesVMs = await CategoryService.GetAllCategoriesAsync();
+        categories = categoriesVMs.ToList();
+        }
+        catch (Exception e) { }
+        if (!(Guid.Empty == partId || partId == null))
+        {
+            part = await PartService.GetPartByIdAsync(partId.Value) ?? new PartViewModel();
         }
     }
 
     private async Task SavePart()
     {
-        if (partId.HasValue)
+        if (!(Guid.Empty == partId || partId == null))
         {
-        //    await PartService.UpdatePartAsync(part);
+           await PartService.UpdatePartAsync(part);
         }
         else
         {
-        //    await PartService.AddPartAsync(part);
+          await PartService.AddPartAsync(part);
         }
 
         await JS.InvokeVoidAsync("alert", "Запчастина успішно збережена!");
@@ -67,17 +73,5 @@
         NavigationManager.NavigateTo("/catalog");
     }
 
-    public class PartModel
-    {
-        public int Id { get; set; }
-        public string Name { get; set; }
-        public int CategoryId { get; set; }
-        public decimal Price { get; set; }
-    }
 
-    public class CategoryModel
-    {
-        public int Id { get; set; }
-        public string Name { get; set; }
-    }
 }

@@ -9,6 +9,8 @@
 @inject NavigationManager Navigation
 @inject IModalService ModalService
 @inject IUserService UserService
+@inject IJSRuntime JS
+
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 <h3>@(TaskId == Guid.Empty ? "Add Task" : "Edit Task")</h3>
@@ -42,20 +44,34 @@
             <option value="Completed">Completed</option>
         </InputSelect>
     </div>
-    <button type="submit" class="btn btn-primary">Save</button>
+    <button type="submit" class="btn btn-primary">Зберегти</button>
+    @if (TaskId != Guid.Empty)
+    {
+        <button type="button" class="btn btn-warning" @onclick="Delete">Видалити</button>
+    }
+    <button type="button" class="btn btn-secondary" @onclick="Cancel">Скасувати</button>
+
 </EditForm>
 
 @code {
     [Parameter]
     public Guid TaskId { get; set; }
+    [SupplyParameterFromQuery]
+    public Guid? JobId { get; set;} 
 
     private TaskViewModel task = new TaskViewModel();
 
-    private List<MechanicViewModel> mechanics;
+    private List<MechanicViewModel> mechanics = new();
 
     protected override async Task OnInitializedAsync()
     {
-        mechanics = UserService.GetMechanics().Result.ToList();
+        try
+        {
+            var mechanicsVMs = await UserService.GetMechanics();
+            mechanics = mechanicsVMs.ToList();
+        }
+        catch(Exception e) { }
+
 
         if (TaskId != Guid.Empty)
         {
@@ -71,9 +87,22 @@
         }
         else
         {
+            task.JobId = JobId;
             await TaskService.UpdateTask(task);
         }
+        JS.InvokeVoidAsync("alert", "Завдання успішно додано!").GetAwaiter();
 
+        Navigation.NavigateTo("/tasks");
+    }
+    private void Cancel()
+    {
+        Navigation.NavigateTo("/tasks");
+    }
+
+    private async Task Delete()
+    {
+        await TaskService.DeleteTask(TaskId);
+        JS.InvokeVoidAsync("alert", "Завдання успішно видалено!").GetAwaiter();
         Navigation.NavigateTo("/tasks");
     }
 }

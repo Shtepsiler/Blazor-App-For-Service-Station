@@ -1,65 +1,68 @@
 ﻿@page "/myjobs"
-@inject HttpClient Http
+@using BlazorApp.Extensions.ViewModels.CatalogVMs
+@using BlazorApp.Extensions.ViewModels.JobsVMs
 @using System.Net.Http.Json
+@using BlazorApp.Extensions.ViewModels.IdentityVMs
+@using BlazorApp.Services.Interfaces
 @using Microsoft.AspNetCore.Components.QuickGrid
-
+@using System.Security.Claims
+@inject NavigationManager NavigationManager
+@inject IJobService JobService 
+@inject IVehicleService VehicleService
+@inject IUserService UserService
+@inject AuthenticationStateProvider AuthenticationStateProvider
 <PageTitle>Мої візити</PageTitle>
 
 <h3>Мої візити</h3>
 
-<EditForm Model="@searchModel" OnValidSubmit="@SearchVisits">
-    <DataAnnotationsValidator />
-    <ValidationSummary />
 
-    <div class="mb-3">
-        <label for="search" class="form-label">Пошук</label>
-        <InputText id="search" class="form-control" @bind-Value="searchModel.SearchTerm" />
-    </div>
-    <button type="submit" class="btn btn-primary">Пошук</button>
-</EditForm>
-
-@if (visits != null)
-{
     <QuickGrid Items="@visitsQueryable" Class="mt-4">
-        <PropertyColumn Property="@(v => v.CarModel)" Title="Модель автомобіля" />
-        <PropertyColumn Property="@(v => v.ProblemDescription)" Title="Опис проблеми" />
-        <PropertyColumn Property="@(v => v.VisitDate)" Title="Дата візиту" />
+        <PropertyColumn Property="@(v => (v.ModelId != null)?vehicles.Find(p=>p.Id == v.ModelId).FullModelName:v.ModelName)" Title="Модель автомобіля" />
+         <PropertyColumn Property="@(v => v.Description)" Title="Опис проблеми" />
+        <PropertyColumn Property="@(v => v.IssueDate)" Title="Дата візиту" />
+        <PropertyColumn Property="@(v => v.Status)" Title="Статус" />
         <TemplateColumn Title="Actions">
-      
+        <button class="btn btn-info" @onclick="() => ViewVisitDetails(context.Id)">Переглянути</button>
         </TemplateColumn>
     </QuickGrid>
-}
+
 
 @code {
-    private SearchModel searchModel = new SearchModel();
-    private List<VisitModel> visits;
-    private IQueryable<VisitModel> visitsQueryable;
+
+    private List<JobVM> visits;
+    private IQueryable<JobVM> visitsQueryable;
+    private List<VehicleViewModel> vehicles = new();
+    private string userid;
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        var authenticationState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authenticationState.User;
+        if (user.Identity.IsAuthenticated)
+        {
+            var userid = user.Claims.Where(c => c.Type == ClaimTypes.NameIdentifier).Select(c => c.Value).ToList();
+        }
+    }
+
 
     private async Task SearchVisits()
     {
         // Приклад запиту до API для отримання робіт користувача
-        visits = await Http.GetFromJsonAsync<List<VisitModel>>($"api/visits?search={searchModel.SearchTerm}");
+        var visitsVMs = await JobService.GetJobsBYUserId(Guid.Parse(userid));
+        visits = visitsVMs.ToList();
         visitsQueryable = visits.AsQueryable();
     }
 
-    private void ViewVisitDetails(int visitId)
+    private void ViewVisitDetails(Guid visitId)
     {
         NavigationManager.NavigateTo($"/myjobs/job/{visitId}");
     }
 
-    [Inject]
-    private NavigationManager NavigationManager { get; set; }
 
     public class SearchModel
     {
         public string SearchTerm { get; set; }
     }
 
-    public class VisitModel
-    {
-        public int Id { get; set; }
-        public string CarModel { get; set; }
-        public string ProblemDescription { get; set; }
-        public DateTime VisitDate { get; set; }
-    }
 }

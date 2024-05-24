@@ -51,7 +51,6 @@ builder.Services.AddIdentityCore<ApplicationUser>(options => options.SignIn.Requ
 
 builder.Services.AddScoped<IIdentityService, IdentityService>();
 builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddScoped<ICatalogService, CatalogService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<IJobService, JobService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
@@ -64,7 +63,7 @@ builder.Services.AddScoped<IPartsService, PartsService>();
 
 builder.Services.AddHttpClient("Identity", client =>
 {
-    client.BaseAddress = new Uri($"{APIBaseString}Identity/");
+    client.BaseAddress = new Uri($"{APIBaseString}account/Identity/");
     client.DefaultRequestHeaders.Add("Accept", "text/plain");
 })
 .ConfigurePrimaryHttpMessageHandler(() =>
@@ -74,11 +73,9 @@ builder.Services.AddHttpClient("Identity", client =>
     return handler;
 });
 
-
-
 builder.Services.AddHttpClient("User", client =>
 {
-    client.BaseAddress = new Uri($"{APIBaseString}User/");
+    client.BaseAddress = new Uri($"{APIBaseString}account/User/");
     client.DefaultRequestHeaders.Add("Accept", "text/plain");
 })
 .ConfigurePrimaryHttpMessageHandler(() =>
@@ -88,46 +85,90 @@ builder.Services.AddHttpClient("User", client =>
     return handler;
 });
 
+builder.Services.AddHttpClient("Role", client =>
+{
+    client.BaseAddress = new Uri($"{APIBaseString}account/Role/");
+    client.DefaultRequestHeaders.Add("Accept", "text/plain");
+})
+.ConfigurePrimaryHttpMessageHandler(() =>
+{
+    var handler = new HttpClientHandler();
+    handler.CookieContainer = new CookieContainer();
+    return handler;
+});
 
+builder.Services.AddHttpClient("Job", client =>
+{
+    client.BaseAddress = new Uri($"{APIBaseString}jobs/Job/");
+    client.DefaultRequestHeaders.Add("Accept", "text/plain");
+})
+.ConfigurePrimaryHttpMessageHandler(() =>
+{
+    var handler = new HttpClientHandler();
+    handler.CookieContainer = new CookieContainer();
+    return handler;
+});
 
+builder.Services.AddHttpClient("Task", client =>
+{
+    client.BaseAddress = new Uri($"{APIBaseString}jobs/MechanicsTasks/");
+    client.DefaultRequestHeaders.Add("Accept", "text/plain");
+})
+.ConfigurePrimaryHttpMessageHandler(() =>
+{
+    var handler = new HttpClientHandler();
+    handler.CookieContainer = new CookieContainer();
+    return handler;
+});
 
+builder.Services.AddHttpClient("Category", client =>
+{
+    client.BaseAddress = new Uri($"{APIBaseString}parts/Category/");
+    client.DefaultRequestHeaders.Add("Accept", "text/plain");
+})
+.ConfigurePrimaryHttpMessageHandler(() =>
+{
+    var handler = new HttpClientHandler();
+    handler.CookieContainer = new CookieContainer();
+    return handler;
+});
 
+builder.Services.AddHttpClient("Order", client =>
+{
+    client.BaseAddress = new Uri($"{APIBaseString}parts/Order/");
+    client.DefaultRequestHeaders.Add("Accept", "text/plain");
+})
+.ConfigurePrimaryHttpMessageHandler(() =>
+{
+    var handler = new HttpClientHandler();
+    handler.CookieContainer = new CookieContainer();
+    return handler;
+});
 
-
+builder.Services.AddHttpClient("Part", client =>
+{
+    client.BaseAddress = new Uri($"{APIBaseString}parts/Part/");
+    client.DefaultRequestHeaders.Add("Accept", "text/plain");
+})
+.ConfigurePrimaryHttpMessageHandler(() =>
+{
+    var handler = new HttpClientHandler();
+    handler.CookieContainer = new CookieContainer();
+    return handler;
+}); 
+builder.Services.AddHttpClient("Vehicle", client =>
+{
+    client.BaseAddress = new Uri($"{APIBaseString}parts/Vehicle/");
+    client.DefaultRequestHeaders.Add("Accept", "text/plain");
+})
+.ConfigurePrimaryHttpMessageHandler(() =>
+{
+    var handler = new HttpClientHandler();
+    handler.CookieContainer = new CookieContainer();
+    return handler;
+});
 
 builder.Services.AddTransient<ApiHttpClient>();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 var app = builder.Build();

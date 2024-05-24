@@ -11,38 +11,48 @@ namespace BlazorApp.Services
         public TasksService(IHttpClientFactory clientFactory, ApiHttpClient httpClient)
         {
 
-            this.httpClient = httpClient.SetHttpClient(clientFactory.CreateClient("User"));
+            this.httpClient = httpClient.SetHttpClient(clientFactory.CreateClient("Task"));
 
         }
 
-        public Task AddTask(TaskViewModel taskViewModel)
+        public async Task AddTask(TaskViewModel taskViewModel)
         {
-            throw new NotImplementedException();
+            var parameters = new Dictionary<string, string> { };
+
+            await httpClient.PostAsync("",parameters,taskViewModel);  
+                }
+
+        public async Task DeleteTask(Guid Id)
+        {
+            await httpClient.DeleteAsync(Id.ToString());
         }
 
-        public Task DeleteTask(Guid Id)
+        public async Task<TaskViewModel> GetTask(Guid Id)
         {
-            throw new NotImplementedException();
+            return await httpClient.GetAsync<TaskViewModel>(Id.ToString());
         }
 
-        public Task<TaskViewModel> GetTask(Guid Id)
+        public async Task<IEnumerable<TaskViewModel>> GetTasks()
         {
-            throw new NotImplementedException();
+            return await httpClient.GetAsync<IEnumerable<TaskViewModel>>("");
         }
 
-        public Task<IEnumerable<TaskViewModel>> GetTasks()
+        public async Task<IEnumerable<TaskViewModel>> GetTasksByJobId(Guid Id)
         {
-            return Task.FromResult( new List<TaskViewModel>().AsEnumerable());
+            var parameters = new Dictionary<string, string> { {"Id",$"{Id.ToString()}" } };
+
+            return await httpClient.GetAsync<IEnumerable<TaskViewModel>>("GetTasksByJobId", parameters);
         }
 
-        public Task<IEnumerable<TaskViewModel>> GetTasksByMechanic(Guid Id)
+        public async Task<IEnumerable<TaskViewModel>> GetTasksByMechanic(Guid Id)
         {
-            throw new NotImplementedException();
+            var parameters = new Dictionary<string, string> { { "Id", $"{Id.ToString()}" } };
+            return await httpClient.GetAsync<IEnumerable<TaskViewModel>>("GetTasksByMechanicId", parameters);
         }
 
-        public Task UpdateTask(TaskViewModel taskViewModel)
+        public async Task UpdateTask(TaskViewModel taskViewModel)
         {
-            throw new NotImplementedException();
+            await httpClient.PutAsync("",taskViewModel);
         }
     }
 }

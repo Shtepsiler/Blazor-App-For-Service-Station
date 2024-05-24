@@ -11,18 +11,38 @@ namespace BlazorApp.Services
         public PartsService(IHttpClientFactory clientFactory, ApiHttpClient httpClient)
         {
 
-            this.httpClient = httpClient.SetHttpClient(clientFactory.CreateClient("User"));
+            this.httpClient = httpClient.SetHttpClient(clientFactory.CreateClient("Part"));
 
         }
 
-        public Task<List<PartViewModel>> GetPartsByOrderIdAsync(Guid orderId)
+        public async Task AddPartAsync(PartViewModel partViewModel)
         {
-            throw new NotImplementedException();
+            var parameters = new Dictionary<string, string> { };
+
+            await httpClient.PostAsync("", parameters, partViewModel);
+            
         }
 
-        public Task RemovePartFromOrderAsync(Guid orderId, Guid partId)
+        public async Task<IEnumerable<PartViewModel>> GetAllPartsAsync()
         {
-            throw new NotImplementedException();
+            return await httpClient.GetAsync<IEnumerable<PartViewModel>>("");
+        }
+
+        public async Task<PartViewModel> GetPartByIdAsync(Guid id)
+        {
+            return await httpClient.GetAsync<PartViewModel>(id.ToString());
+        }
+
+  
+
+        public async Task UpdatePartAsync(PartViewModel partViewModel)
+        {
+            await httpClient.PutAsync("",partViewModel);
+        }
+
+        public async Task<IEnumerable<PartViewModel>> GetPartsByOrderIdAsync(Guid orderId)
+        {
+         return await httpClient.GetAsync<IEnumerable<PartViewModel>>($"GetPartsByOrderId/{orderId.ToString()}");
         }
     }
 }

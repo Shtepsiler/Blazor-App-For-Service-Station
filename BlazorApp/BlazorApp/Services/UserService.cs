@@ -32,7 +32,7 @@ namespace BlazorApp.Services
 
         public async Task<ApplicationUser> GetUser(Guid id)
         {
-            ;
+            
 
             var user = await httpClient.GetAsync<ApplicationUser>(id.ToString());
 
@@ -132,19 +132,20 @@ namespace BlazorApp.Services
 
         }
 
-        public Task<IEnumerable<MechanicViewModel>> GetMechanics()
+        public async Task<IEnumerable<MechanicViewModel>> GetMechanics()
         {
-            return Task.FromResult(new List<MechanicViewModel>().AsEnumerable());
+            return await httpClient.GetAsync<IEnumerable<MechanicViewModel>>("GetMechanics");
         }
 
-        public Task DeleteUser(Guid Id)
+        public async Task DeleteUser(Guid Id)
         {
-            throw new NotImplementedException();
+            await httpClient.DeleteAsync(Id.ToString());
+
         }
 
-        public Task SaveChanges(UserViewModel modek)
+        public async Task SaveChanges(UserViewModel model)
         {
-            throw new NotImplementedException();
+            await httpClient.PutAsync("",model);
         }
     }
 

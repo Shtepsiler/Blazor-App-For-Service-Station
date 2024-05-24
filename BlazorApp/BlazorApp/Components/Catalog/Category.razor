@@ -1,5 +1,6 @@
 ﻿@page "/edit-category"
-@page "/edit-category/{categoryId:Guid}"
+@page "/edit-category/{Id:guid}"
+@using BlazorApp.Extensions.ViewModels.CatalogVMs
 @using BlazorApp.Services.Interfaces
 @inject ICategoryService CategoryService
 @inject NavigationManager NavigationManager
@@ -13,21 +14,28 @@
     <ValidationSummary />
     <div class="form-group">
         <label for="name">Назва</label>
-        <InputText id="name" class="form-control" @bind-Value="category.Name" />
+        <InputText id="name" class="form-control" @bind-Value="category.Title" />
+    </div>
+    <div class="form-group">
+        <label for="name">Опис</label>
+        <InputText id="Description" class="form-control" @bind-Value="category.Description" />
     </div>
     <button type="submit" class="btn btn-primary">@((categoryId.HasValue ? "Зберегти" : "Додати"))</button>
     <button type="button" class="btn btn-secondary" @onclick="Cancel">Скасувати</button>
 </EditForm>
 
 @code {
-    [Parameter] public Guid? categoryId { get; set; }
-    private CategoryModel category = new CategoryModel();
+    [CascadingParameter] public string? Id { get; set; }
+    public Guid? categoryId { get; set; }
+    private CategoryViewModel category = new CategoryViewModel();
 
     protected override async Task OnInitializedAsync()
     {
+        categoryId = Guid.Parse(Id);
+
         if (categoryId.HasValue)
         {
-           // category = await CategoryService.GetCategoryByIdAsync(categoryId.Value) ?? new CategoryModel();
+            category = await CategoryService.GetCategoryByIdAsync(categoryId.Value) ?? new CategoryViewModel();
         }
     }
 
@@ -35,11 +43,11 @@
     {
         if (categoryId.HasValue)
         {
-         //   await CategoryService.UpdateCategoryAsync(category);
+            await CategoryService.UpdateCategoryAsync(category);
         }
         else
         {
-       //     await CategoryService.AddCategoryAsync(category);
+            await CategoryService.AddCategoryAsync(category);
         }
 
         NavigationManager.NavigateTo("/catalog");
@@ -50,9 +58,5 @@
         NavigationManager.NavigateTo("/catalog");
     }
 
-    public class CategoryModel
-    {
-        public int Id { get; set; }
-        public string Name { get; set; }
-    }
+
 }

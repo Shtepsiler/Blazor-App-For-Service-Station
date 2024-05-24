@@ -37,11 +37,11 @@ namespace BlazorApp.Services
         }
         public async Task ResendConfirmationEmailAsync(string Email)
         {
-            var parameters = new Dictionary<string, string>
-            {/*{"Email",$"{Email}" }*/ };
+            var parameters = new Dictionary<string, string> { };
+           
 
 
-            await httpClient.PutAsync("ResendConfirmationEmail", parameters,Email);
+            await httpClient.PutAsync("ResendConfirmationEmail",Email);
         }
 
 

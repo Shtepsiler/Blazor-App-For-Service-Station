@@ -12,13 +12,29 @@ namespace BlazorApp.Services
         public OrderService(IHttpClientFactory clientFactory, ApiHttpClient httpClient)
         {
 
-            this.httpClient = httpClient.SetHttpClient(clientFactory.CreateClient("User"));
+            this.httpClient = httpClient.SetHttpClient(clientFactory.CreateClient("Order"));
 
         }
-
-        public Task<OrderViewModel> GetOrderByIdAsync(Guid orderId)
+        public async Task<OrderViewModel> GetNewOrder()
         {
-            throw new NotImplementedException();
+            return await httpClient.GetAsync<OrderViewModel>("GetNewOrder");
+        }
+
+        public async Task<OrderViewModel> GetOrderByIdAsync(Guid orderId)
+        {
+            return await httpClient.GetAsync<OrderViewModel>(orderId.ToString());
+        }
+        public async Task RemovePartFromOrderAsync(Guid orderId, Guid partId)
+        {
+            var parameters = new Dictionary<string, string> { };
+
+            await httpClient.PostAsync("RemovePartFromOrder", parameters);
+        }
+        public async Task AddPartToOrderAsync(Guid orderId, Guid partId)
+        {
+            var parameters = new Dictionary<string, string> { };
+
+            await httpClient.PostAsync("AddPartToOrder", parameters);
         }
     }
 }

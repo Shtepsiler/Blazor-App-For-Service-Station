@@ -1,4 +1,4 @@
-﻿@page "/job-info/{jobId:Guid}"
+﻿@page "/job-info/{jobId:guid}"
 
 @using BlazorApp.Extensions.ViewModels.IdentityVMs
 @using BlazorApp.Extensions.ViewModels.JobsVMs
@@ -11,6 +11,8 @@
 @inject IJobService JobService
 @inject ITasksService TasksService
 @inject IUserService UserService
+@inject IJSRuntime JS
+
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 <PageTitle>Деталі роботи</PageTitle>
@@ -23,42 +25,86 @@
 }
 else if (job != null)
 {
-    <div>
-        <p><strong>ID:</strong> @job.Id.ToString()</p>
-        <p><strong>Модель автомобіля:</strong>@job.ModelName</p>
-        <p><strong>Опис проблеми:</strong> @job.Description </p>
-        <p><strong>Дата візиту:</strong> @job.IssueDate.ToString("dd/MM/yyyy")</p>
-        @if (job.FinishDate != null) {
-            <p><strong>Дата завершення роботи:</strong> @job.FinishDate.Value.ToString("dd/MM/yyyy")</p>
-        }
-        
-        <AuthorizeView Roles="Admin, Mechanic">
-            <button class="btn btn-primary" @onclick="AddTask">Додати завдання</button>
+    <div class="job-details-container">
+        <div class="job-info">
+            <p><strong>ID:</strong> @job.Id.ToString()</p>
+            <p><strong>Модель автомобіля:</strong> @job.ModelName</p>
+            <p><strong>Опис проблеми:</strong> @job.Description</p>
+            <p><strong>Дата візиту:</strong> @job.IssueDate.ToString("dd/MM/yyyy")</p>
+            @if (job.FinishDate != null)
+            {
+                <p><strong>Дата завершення роботи:</strong> @job.FinishDate.Value.ToString("dd/MM/yyyy")</p>
+            }
+        </div>
+
+        <AuthorizeView Roles="Admin,Mechanic">
+            <button class="btn btn-primary mb-3" @onclick="AddTask">Додати завдання</button>
         </AuthorizeView>
-        
-        <h4>Список завдань</h4>
-        <QuickGrid Items="@taskViewModelsQueryable">
-            <PropertyColumn Property="@(t => t.Name)" Title="Назва" Sortable="true"></PropertyColumn>
-            <PropertyColumn Property="@(t => t.Task.Take(20).Append('.').Append('.').Append('.'))" Title="Опис"></PropertyColumn>
-            <TemplateColumn Title="Статус">
-                @context.Status
-                <InputSelect @bind-Value="context.Status" @onchange="(e) => UpdateTaskStatus(context.Id, context.Status)">
-                    <option value="Pending">Pending</option>
-                    <option value="In Progress">In Progress</option>
-                    <option value="Completed">Completed</option>
-                </InputSelect>
-            </TemplateColumn>            <TemplateColumn Title="Механік">
-                <span>@(mechanics.Where(p=>p.Id == context.MechanicId).FirstOrDefault().UserName)</span>
-            </TemplateColumn>
-            <TemplateColumn Title="Прерйти до роботи">
 
-            </TemplateColumn>        
-            <TemplateColumn Title="Дії">
+        @if (job.OrderId != null)
+        {
+            <p><strong>ID Замовлення:</strong> @job.OrderId</p>
+        }
+        else
+        {   <AuthorizeView Roles="Admin,Mechanic">
+            <button class="btn btn-primary mb-3" @onclick="AddOrder">Додати замовлення</button>
+            </AuthorizeView>
+        }
 
-            </TemplateColumn>
+        <div class="task-list">
+            <h4>Список завдань</h4>
+            <QuickGrid Items="@taskViewModelsQueryable" Class="table table-striped">
+                <PropertyColumn Property="@(t => t.Name)" Title="Назва" Sortable="true"></PropertyColumn>
+                <PropertyColumn Property="@(t => new string(t.Task.Take(20).ToArray()) + "...")" Title="Опис"></PropertyColumn>
+                <TemplateColumn Title="Статус">
+                    @context.Status
+                    <InputSelect @bind-Value="context.Status" @onchange="(e) => UpdateTaskStatus(context.Id, context.Status)">
+                        <option value="Pending">Pending</option>
+                        <option value="In Progress">In Progress</option>
+                        <option value="Completed">Completed</option>
+                    </InputSelect>
+                </TemplateColumn>
+                <TemplateColumn Title="Механік">
+                    <span>@(mechanics.Where(p => p.Id == context.MechanicId).FirstOrDefault()?.UserName)</span>
+                </TemplateColumn>
+                 <AuthorizeView Roles="Admin,Mechanic">
+                <TemplateColumn Title="Прерйти до роботи">
+                    <button class="btn btn-info" @onclick="() => NavigateToTask(context.Id)">Перейти</button>
+                </TemplateColumn>
+                <TemplateColumn Title="Дії">
+                    <button class="btn btn-danger" @onclick="() => DeleteTask(context.Id)">Видалити</button>
+                </TemplateColumn>
+                </AuthorizeView>
+            </QuickGrid>
+        </div>
 
-
-        </QuickGrid>
+        @if (job.OrderId != null)
+        {
+            <div class="parts-list mt-4">
+                <h4>Список запчастин</h4>
+                <QuickGrid Items="@taskViewModelsQueryable" Class="table table-striped">
+                    <PropertyColumn Property="@(t => t.Name)" Title="Назва" Sortable="true"></PropertyColumn>
+                    <PropertyColumn Property="@(t => new string(t.Task.Take(20).ToArray()) + "...")" Title="Опис"></PropertyColumn>
+                    <TemplateColumn Title="Статус">
+                        @context.Status
+                        <InputSelect @bind-Value="context.Status" @onchange="(e) => UpdateTaskStatus(context.Id, context.Status)">
+                            <option value="Pending">Pending</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Completed">Completed</option>
+                        </InputSelect>
+                    </TemplateColumn>
+                    <TemplateColumn Title="Механік">
+                        <span>@(mechanics.Where(p => p.Id == context.MechanicId).FirstOrDefault()?.UserName)</span>
+                    </TemplateColumn>
+                    <TemplateColumn Title="Прерйти до роботи">
+                        <button class="btn btn-info" @onclick="() => NavigateToTask(context.Id)">Перейти</button>
+                    </TemplateColumn>
+                    <TemplateColumn Title="Дії">
+                        <button class="btn btn-danger" @onclick="() => DeleteTask(context.Id)">Видалити</button>
+                    </TemplateColumn>
+                </QuickGrid>
+            </div>
+        }
     </div>
 }
 else
@@ -81,8 +127,14 @@ else
     {
         try
         {
-
-        //    job = JobService.GetJobById(jobId);
+            try
+            {
+                job = await JobService.GetJobById(jobId);
+            }
+            catch (Exception e)
+            {
+                errorMessage = $"Помилка завантаження деталей роботи: {e.Message}";
+            }
 
             if (job == null)
             {
@@ -92,9 +144,9 @@ else
             { 
                 var mechanicViewModels = await UserService.GetMechanics();
                 mechanics = mechanicViewModels.ToList();
-//var tsksViewModels = TasksService.
-         //       tasks = 
-               // taskViewModelsQueryable = tasks.AsQueryable();
+                var tsksViewModels = await TasksService.GetTasksByJobId(job.Id);
+                tasks = tsksViewModels.ToList();
+                taskViewModelsQueryable = tasks.AsQueryable();
             }
         }
         catch (Exception ex)
@@ -108,27 +160,40 @@ else
         NavigationManager.NavigateTo($"/jobs/{jobId}/tasks/add");
     }
 
+    private void AddOrder()
+    {
+        // Реалізуйте логіку для додавання замовлення
+
+        NavigationManager.NavigateTo($"/orders/?jobId={jobId}");
+    }
+
+    private void NavigateToTask(Guid taskId)
+    {
+        NavigationManager.NavigateTo($"/tasks/edit/{taskId}");
+    }
+
     private void EditTask(Guid taskId)
     {
         NavigationManager.NavigateTo($"/jobs/{jobId}/tasks/edit/{taskId}");
     }
 
-
-    private void UpdateTaskStatus(Guid id,string status)
+    private void UpdateTaskStatus(Guid id, string status)
     {
-        
+        // Реалізуйте логіку для оновлення статусу завдання
     }
+
     private async Task DeleteTask(Guid taskId)
     {
         try
         {
-            //await Http.DeleteAsync($"api/tasks/{taskId}");
-           // tasks = await Http.GetFromJsonAsync<List<TaskViewModel>>($"api/jobs/{jobId}/tasks");
+            await TasksService.DeleteTask(taskId);
+            var tsksViewModels = await TasksService.GetTasksByJobId(job.Id);
+            tasks = tsksViewModels.ToList();
+            taskViewModelsQueryable = tasks.AsQueryable();
         }
         catch (Exception ex)
         {
             errorMessage = $"Помилка видалення завдання: {ex.Message}";
         }
     }
-
 }

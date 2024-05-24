@@ -1,7 +1,9 @@
 ﻿@page "/catalog"
+
 @using Microsoft.AspNetCore.Components.QuickGrid
 @using BlazorApp.Services.Interfaces
-@inject ICatalogService PartService
+@using BlazorApp.Extensions.ViewModels.CatalogVMs
+@inject IPartsService PartService
 @inject ICategoryService CategoryService
 @inject NavigationManager NavigationManager
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
@@ -17,28 +19,38 @@
                 @foreach (var category in categories)
                 {
                     <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <span @onclick="() => FilterByCategory(category)">@category.Name</span>
-                        <button class="btn btn-sm btn-secondary" @onclick="() => EditCategory(category.Id)">Редагувати</button>
+                        <span @onclick="() => FilterByCategory(category)">@category.Title</span>
+                        <button class="btn btn-sm btn-secondary" @onclick="() => EditCategory(category.Id.Value)">Редагувати</button>
                     </li>
                 }
             </ul>
             <button class="btn btn-primary mt-3" @onclick="AddCategory">Додати категорію</button>
         </div>
         <div class="col-md-9">
-            <div class="input-group mb-3">
-                <input type="text" class="form-control" placeholder="Назва запчастини" @bind="searchTerm">
-                <button class="btn btn-outline-secondary" type="button" @onclick="SearchParts">Пошук</button>
+            <div class="d-flex justify-content-between mb-3">
+                <div class="input-group">
+                    <input type="text" class="form-control" placeholder="Назва запчастини" @bind="searchTerm">
+                    <button class="btn btn-outline-secondary" type="button" @onclick="SearchParts">Пошук</button>
+                </div>
+                @if (orderId != Guid.Empty)
+                {
+                    <button class="btn btn-primary" @onclick="GoToOrder">Перейти до замовлення</button>
+                }
             </div>
             <button class="btn btn-primary mb-3" @onclick="AddPart">Додати запчастину</button>
             <QuickGrid Items="@PartsQueryable">
                 <PropertyColumn Property="@(p => p.Id)" Title="ID" Sortable="true"></PropertyColumn>
-                <PropertyColumn Property="@(p => p.Name)" Title="Назва" Sortable="true"></PropertyColumn>
-                <PropertyColumn Property="@(p => p.CategoryName)" Title="Категорія" Sortable="true"></PropertyColumn>
-                <PropertyColumn Property="@(p => p.Price)" Title="Ціна" Sortable="true"></PropertyColumn>
+                <PropertyColumn Property="@(p => p.PartName)" Title="Назва" Sortable="true"></PropertyColumn>
+                <PropertyColumn Property="@(p => categories.Where(c => c.Id == p.CategoryId).FirstOrDefault().Title)" Title="Категорія" Sortable="true"></PropertyColumn>
+                <PropertyColumn Property="@(p => p.PriceRegular)" Title="Ціна" Sortable="true"></PropertyColumn>
                 <TemplateColumn Title="Дії">
                     <ChildContent Context="part">
+                        @if (orderId != Guid.Empty)
+                        {
+                            <button class="btn btn-success" @onclick="() => AddToOrder(part.Id.Value)">Додати до корзини</button>
+                        }
                         <AuthorizeView Roles="Admin">
-                        <button class="btn btn-primary" @onclick="() => EditPart(part.Id)">Редагувати</button>
+                            <button class="btn btn-primary" @onclick="() => EditPart(part.Id.Value)">Редагувати</button>
                         </AuthorizeView>
                     </ChildContent>
                 </TemplateColumn>
@@ -51,29 +63,40 @@
     [SupplyParameterFromQuery]
     public Guid orderId { get; set; }
 
-    private List<PartModel> parts = new List<PartModel>();
-    private List<PartModel> filteredParts = new List<PartModel>();
-    private IQueryable<PartModel> PartsQueryable = Enumerable.Empty<PartModel>().AsQueryable();
-    private List<CategoryModel> categories = new List<CategoryModel>();
+    private List<PartViewModel> parts = new List<PartViewModel>();
+    private List<PartViewModel> filteredParts = new List<PartViewModel>();
+    private IQueryable<PartViewModel> PartsQueryable = Enumerable.Empty<PartViewModel>().AsQueryable();
+    private List<CategoryViewModel> categories = new List<CategoryViewModel>();
     private string searchTerm = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
-     //   parts = await PartService.GetAllPartsAsync();
-       // categories = await CategoryService.GetAllCategoriesAsync();
-        filteredParts = parts;
-        PartsQueryable = filteredParts.AsQueryable();
+        try
+        {
+            var partsvms = await PartService.GetAllPartsAsync();
+            parts = partsvms.ToList();
+            filteredParts = parts;
+            PartsQueryable = filteredParts.AsQueryable();
+        }
+        catch (Exception e) { }
+
+        try
+        {
+            var categoriesVMs = await CategoryService.GetAllCategoriesAsync();
+            categories = categoriesVMs.ToList();
+        }
+        catch (Exception e) { }
     }
 
     private void SearchParts()
     {
         filteredParts = parts
-            .Where(p => string.IsNullOrEmpty(searchTerm) || p.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+            .Where(p => string.IsNullOrEmpty(searchTerm) || p.PartName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
             .ToList();
         PartsQueryable = filteredParts.AsQueryable();
     }
 
-    private void FilterByCategory(CategoryModel category)
+    private void FilterByCategory(CategoryViewModel category)
     {
         if (category == null)
         {
@@ -91,7 +114,7 @@
         NavigationManager.NavigateTo("/edit-category");
     }
 
-    private void EditCategory(int categoryId)
+    private void EditCategory(Guid categoryId)
     {
         NavigationManager.NavigateTo($"/edit-category/{categoryId}");
     }
@@ -101,23 +124,19 @@
         NavigationManager.NavigateTo("/edit-part");
     }
 
-    private void EditPart(int partId)
+    private void EditPart(Guid partId)
     {
         NavigationManager.NavigateTo($"/edit-part/{partId}");
     }
 
-    public class PartModel
+    private void GoToOrder()
     {
-        public int Id { get; set; }
-        public string Name { get; set; }
-        public int CategoryId { get; set; }
-        public string CategoryName { get; set; }
-        public decimal Price { get; set; }
+        NavigationManager.NavigateTo($"/orders/{orderId}");
     }
 
-    public class CategoryModel
+    private void AddToOrder(Guid partId)
     {
-        public int Id { get; set; }
-        public string Name { get; set; }
+        // Додайте логіку для додавання товару до замовлення
+      //  Console.WriteLine($"Товар з ID {partId} доданий до замовлення {orderId}");
     }
 }

@@ -1,4 +1,4 @@
-﻿namespace BlazorApp.Extensions.ViewModels.PartsVMs
+﻿namespace BlazorApp.Extensions.ViewModels.CatalogVMs
 {
     public class VehicleViewModel
     {

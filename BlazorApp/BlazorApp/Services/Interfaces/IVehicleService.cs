@@ -1,4 +1,4 @@
-﻿using BlazorApp.Extensions.ViewModels.PartsVMs;
+﻿using BlazorApp.Extensions.ViewModels.CatalogVMs;
 
 namespace BlazorApp.Services.Interfaces
 {

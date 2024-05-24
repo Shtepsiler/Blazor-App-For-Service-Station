@@ -10,6 +10,8 @@
 @inject IRoleService RoleService
 @inject NavigationManager Navigation
 @inject INotificationService NotificationService
+@inject IJSRuntime JS
+
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 <PageTitle>User Details</PageTitle>
@@ -61,6 +63,8 @@ else
                 </dl>
                 <button type="submit" class="btn btn-primary">Save</button>
                 <Button  class="btn btn-danger" @onclick="ShowModal" formmethod="dialog">Delete</Button>
+                <button type="button" class="btn btn-secondary" @onclick="Cancel">Скасувати</button>
+
             </div>
         </div>
     </EditForm>
@@ -86,6 +90,7 @@ else
     [Parameter]
     public Guid UserId { get; set; }
     [SupplyParameterFromForm(Name = "edit-user")]
+
     private UserViewModel? User { get; set; } = new UserViewModel();
     private string selectedRole{ get; set; }
     private List<string> roles = new List<string>() { "User", "Mechanic", "Admin" };
@@ -107,12 +112,14 @@ else
     {
         return modalRef.Hide();
     }
-    private Task DeleteUser()
+    private  Task DeleteUser()
     {
         try
         {
-            UserService.DeleteUser(Guid Id);
+            UserService.DeleteUser(User.Id);
         }
+        catch { }
+        JS.InvokeVoidAsync("alert", "Користувача успішно видалено!").GetAwaiter();
 
         Navigation.NavigateTo("/Users");
         return modalRef.Hide();
@@ -136,8 +143,13 @@ else
             {
                 
             }
+            JS.InvokeVoidAsync("alert", "Користувача успішно змінено!").GetAwaiter();
 
         }
+        Navigation.NavigateTo("/Users");
+    }
+    private void Cancel()
+    {
         Navigation.NavigateTo("/Users");
     }
 
