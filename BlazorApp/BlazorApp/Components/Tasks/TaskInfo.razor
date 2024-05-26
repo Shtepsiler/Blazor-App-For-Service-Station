@@ -20,15 +20,15 @@
     
 
     <div class="mb-3">
-        <label for="title" class="form-label">Title</label>
+        <label for="title" class="form-label">Назва</label>
         <InputText @bind-Value="task.Name" id="title" class="form-control" />
     </div>
     <div class="mb-3">
-        <label for="description" class="form-label">Description</label>
+        <label for="description" class="form-label">Опис</label>
         <InputTextArea @bind-Value="task.Task" id="description" class="form-control" />
     </div>
     <div class="mb-3">
-        <label for="mechanic" class="form-label">Mechanic</label>
+        <label for="mechanic" class="form-label">Мехакік</label>
         <InputSelect @bind-Value="task.MechanicId" id="mechanic" class="form-select">
             @foreach (var mechanic in mechanics)
             {
@@ -37,7 +37,7 @@
         </InputSelect>
     </div>
     <div class="mb-3">
-        <label for="status" class="form-label">Status</label>
+        <label for="status" class="form-label">Статус</label>
         <InputSelect @bind-Value="task.Status" id="status" class="form-select">
             <option value="Pending">Pending</option>
             <option value="In Progress">In Progress</option>

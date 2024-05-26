@@ -16,7 +16,7 @@
 <h3>Tasks</h3>
 <AuthorizeView Roles="Admin">
 <div class="mb-3">
-    <label for="mechanicSelect" class="form-label">Select Mechanic:</label>
+    <label for="mechanicSelect" class="form-label">Оберіть механіка:</label>
     <InputSelect @bind-Value="selectedMechanic" id="mechanicSelect" class="form-select">
         <option value="">All</option>
         @foreach (var mechanic in mechanics)
@@ -28,19 +28,19 @@
             </InputSelect>
         </div>
 
-        <button class="btn btn-primary" @onclick="AddTask">Add Task</button>
+        <button class="btn btn-primary" @onclick="AddTask">Додати завдання</button>
     </AuthorizeView>
 
     <QuickGrid Items="@tasks">
-        <PropertyColumn Property="@(t => t.Name)" Title="Name" Sortable="true"></PropertyColumn>
-        <PropertyColumn Property="@(t => t.Task)" Title="Description" Sortable="true"></PropertyColumn>
-        <PropertyColumn Property="@(t => t.Status)" Title="Status" Sortable="true"></PropertyColumn>
-        <TemplateColumn Title="Mechanic">
+        <PropertyColumn Property="@(t => t.Name)" Title="Назва" Sortable="true"></PropertyColumn>
+        <PropertyColumn Property="@(t => t.Task)" Title="Опис" Sortable="true"></PropertyColumn>
+        <PropertyColumn Property="@(t => t.Status)" Title="Статус" Sortable="true"></PropertyColumn>
+        <TemplateColumn Title="Механік">
             <span>@(mechanics.Where(p => p.Id == context.Id).Select(p => p.UserName).FirstOrDefault())</span>
         </TemplateColumn>
-        <TemplateColumn Title="Actions">
-            <button class="btn btn-secondary" @onclick="() => EditTask(context.Id)">Edit</button>
-            <button class="btn btn-danger" @onclick="() => DeleteTask(context.Id)">Delete</button>
+        <TemplateColumn Title="Дії">
+            <button class="btn btn-secondary" @onclick="() => EditTask(context.Id)">Змінити</button>
+            <button class="btn btn-danger" @onclick="() => DeleteTask(context.Id)">Видалити</button>
         </TemplateColumn>
     </QuickGrid>
 }

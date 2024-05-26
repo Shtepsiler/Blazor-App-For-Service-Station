@@ -30,10 +30,10 @@ else if (job != null)
             <p><strong>ID:</strong> @job.Id.ToString()</p>
             <p><strong>Модель автомобіля:</strong> @job.ModelName</p>
             <p><strong>Опис проблеми:</strong> @job.Description</p>
-            <p><strong>Дата візиту:</strong> @job.IssueDate.ToString("dd/MM/yyyy")</p>
+            <p><strong>Дата візиту:</strong> @job.IssueDate.ToString()</p>
             @if (job.FinishDate != null)
             {
-                <p><strong>Дата завершення роботи:</strong> @job.FinishDate.Value.ToString("dd/MM/yyyy")</p>
+                <p><strong>Дата завершення роботи:</strong> @job.FinishDate.Value.ToString()</p>
             }
         </div>
 
@@ -46,8 +46,9 @@ else if (job != null)
             <p><strong>ID Замовлення:</strong> @job.OrderId</p>
         }
         else
-        {   <AuthorizeView Roles="Admin,Mechanic">
-            <button class="btn btn-primary mb-3" @onclick="AddOrder">Додати замовлення</button>
+        {
+            <AuthorizeView Roles="Admin,Mechanic">
+                <button class="btn btn-primary mb-3" @onclick="AddOrder">Додати замовлення</button>
             </AuthorizeView>
         }
 
@@ -65,16 +66,14 @@ else if (job != null)
                     </InputSelect>
                 </TemplateColumn>
                 <TemplateColumn Title="Механік">
-                    <span>@(mechanics.Where(p => p.Id == context.MechanicId).FirstOrDefault()?.UserName)</span>
+                    <span>@mechanics.FirstOrDefault(p => p.Id == context.MechanicId)?.UserName</span>
                 </TemplateColumn>
-                 <AuthorizeView Roles="Admin,Mechanic">
                 <TemplateColumn Title="Прерйти до роботи">
                     <button class="btn btn-info" @onclick="() => NavigateToTask(context.Id)">Перейти</button>
                 </TemplateColumn>
                 <TemplateColumn Title="Дії">
                     <button class="btn btn-danger" @onclick="() => DeleteTask(context.Id)">Видалити</button>
                 </TemplateColumn>
-                </AuthorizeView>
             </QuickGrid>
         </div>
 
@@ -94,7 +93,7 @@ else if (job != null)
                         </InputSelect>
                     </TemplateColumn>
                     <TemplateColumn Title="Механік">
-                        <span>@(mechanics.Where(p => p.Id == context.MechanicId).FirstOrDefault()?.UserName)</span>
+                        <span>@mechanics.FirstOrDefault(p => p.Id == context.MechanicId)?.UserName</span>
                     </TemplateColumn>
                     <TemplateColumn Title="Прерйти до роботи">
                         <button class="btn btn-info" @onclick="() => NavigateToTask(context.Id)">Перейти</button>
@@ -127,27 +126,19 @@ else
     {
         try
         {
-            try
-            {
-                job = await JobService.GetJobById(jobId);
-            }
-            catch (Exception e)
-            {
-                errorMessage = $"Помилка завантаження деталей роботи: {e.Message}";
-            }
+            job = await JobService.GetJobById(jobId);
 
             if (job == null)
             {
                 errorMessage = "Робота не знайдена.";
             }
             else
-            { 
-                var mechanicViewModels = await UserService.GetMechanics();
-                mechanics = mechanicViewModels.ToList();
-                var tsksViewModels = await TasksService.GetTasksByJobId(job.Id);
-                tasks = tsksViewModels.ToList();
+            {
+                mechanics = (await UserService.GetMechanics()).ToList();
+                tasks = (await TasksService.GetTasksByJobId(job.Id.Value)).ToList();
                 taskViewModelsQueryable = tasks.AsQueryable();
             }
+
         }
         catch (Exception ex)
         {
@@ -157,14 +148,12 @@ else
 
     private void AddTask()
     {
-        NavigationManager.NavigateTo($"/jobs/{jobId}/tasks/add");
+        NavigationManager.NavigateTo($"/tasks/add");
     }
 
     private void AddOrder()
     {
-        // Реалізуйте логіку для додавання замовлення
-
-        NavigationManager.NavigateTo($"/orders/?jobId={jobId}");
+        NavigationManager.NavigateTo($"/order/?jobId={jobId}");
     }
 
     private void NavigateToTask(Guid taskId)
@@ -172,14 +161,9 @@ else
         NavigationManager.NavigateTo($"/tasks/edit/{taskId}");
     }
 
-    private void EditTask(Guid taskId)
-    {
-        NavigationManager.NavigateTo($"/jobs/{jobId}/tasks/edit/{taskId}");
-    }
-
     private void UpdateTaskStatus(Guid id, string status)
     {
-        // Реалізуйте логіку для оновлення статусу завдання
+        // Implement task status update logic
     }
 
     private async Task DeleteTask(Guid taskId)
@@ -187,8 +171,7 @@ else
         try
         {
             await TasksService.DeleteTask(taskId);
-            var tsksViewModels = await TasksService.GetTasksByJobId(job.Id);
-            tasks = tsksViewModels.ToList();
+            tasks = (await TasksService.GetTasksByJobId(job.Id.Value)).ToList();
             taskViewModelsQueryable = tasks.AsQueryable();
         }
         catch (Exception ex)

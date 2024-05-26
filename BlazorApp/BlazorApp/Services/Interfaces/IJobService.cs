@@ -6,7 +6,7 @@ namespace BlazorApp.Services.Interfaces
     {
         Task CreateVisitAsync(CreateJobCommand command);
         Task<JobVM> GetJobById(Guid Id);
-        Task<IEnumerable<JobVM>> GetJobsBYUserId(Guid UserId);
+        Task<IEnumerable<JobVMForUser>> GetJobsBYUserId(Guid UserId);
         Task<IEnumerable<JobVM>> GetAllJobs();
         Task<IEnumerable<JobVM>> GetJobByMechanicId(Guid UserId);
 

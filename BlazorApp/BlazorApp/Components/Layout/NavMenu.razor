@@ -12,13 +12,13 @@
             <div class="collapse navbar-collapse justify-content-center" id="navbarNav">
                 <ul class="navbar-nav justify-content-center ms-auto">
                     <li class="nav-item">
-                        <NavLink class="nav-link active text-black" href="/" Match="NavLinkMatch.All">Home</NavLink>
+                        <NavLink class="nav-link active text-black" href="/" Match="NavLinkMatch.All">Головна</NavLink>
                     </li>
                     <li class="nav-item">
-                        <NavLink class="nav-link active text-black" href="Services">Services</NavLink>
+                        <NavLink class="nav-link active text-black" href="Services">Сервси</NavLink>
                     </li>
                     <li class="nav-item">
-                        <NavLink class="nav-link active text-black" href="Team">Team</NavLink>
+                        <NavLink class="nav-link active text-black" href="Team">Наша команла</NavLink>
                     </li>
                 </ul>
 
@@ -54,7 +54,7 @@
                                 <form action="Account/Logout" method="post">
                                     <AntiforgeryToken />
                                     <input type="hidden" name="ReturnUrl" value="@currentUrl" />
-                                    <button type="submit" class="nav-link text-black">Logout</button>
+                                    <button type="submit" class="nav-link text-black">Вийти</button>
                                 </form>
                             </li>
                         </ul>
@@ -62,10 +62,10 @@
                     <NotAuthorized>
                         <ul class="navbar-nav ms-auto">
                             <li class="nav-item">
-                                <NavLink class="nav-link active text-black" href="Account/Register">Register</NavLink>
+                                <NavLink class="nav-link active text-black" href="Account/Register">Зареєструватися</NavLink>
                             </li>
                             <li class="nav-item">
-                                <NavLink class="nav-link active text-black" href="Account/Login">Login</NavLink>
+                                <NavLink class="nav-link active text-black" href="Account/Login">Увійти</NavLink>
                             </li>
                         </ul>
                     </NotAuthorized>

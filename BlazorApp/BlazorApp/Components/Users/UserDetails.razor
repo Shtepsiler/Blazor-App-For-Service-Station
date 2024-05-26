@@ -27,31 +27,31 @@ else
     <EditForm Model="@User" FormName="edit-user" OnValidSubmit="SaveUserDetails"  method="post">
         <div class="card">
             <div class="card-header">
-                <h4>@User.UserName's Details</h4>
+                <h4>Деталі @User.UserName</h4>
             </div>
             <div class="card-body">
                 <dl class="row">
-                    <dt class="col-sm-3">Name</dt>
+                    <dt class="col-sm-3">Ім'я'</dt>
                     <dd class="col-sm-9">
                         <InputText @bind-Value="User.UserName" class="form-control" />
                     </dd>
 
-                    <dt class="col-sm-3">Email</dt>
+                    <dt class="col-sm-3">Електронна пошта</dt>
                     <dd class="col-sm-9">
                         <InputText @bind-Value="User.Email" class="form-control" />
                     </dd>
 
-                    <dt class="col-sm-3">Phone Number</dt>
+                    <dt class="col-sm-3">Номер телефону</dt>
                     <dd class="col-sm-9">
                         <InputText @bind-Value="User.PhoneNumber" class="form-control" />
                     </dd>
 
-                    <dt class="col-sm-3">Email Confirmed</dt>
+                    <dt class="col-sm-3">Чи підтверджений емайл</dt>
                     <dd class="col-sm-9">
                         <InputCheckbox @bind-Value="User.EmailConfirmed" class="form-check-input" />
                     </dd>
 
-                    <dt class="col-sm-3">Role</dt>
+                    <dt class="col-sm-3">Роль</dt>
                     <dd class="col-sm-9">
                         <InputSelect @bind-Value="selectedRole" class="form-control">
                             @foreach (var role in roles)
@@ -61,8 +61,8 @@ else
                         </InputSelect>
                     </dd>
                 </dl>
-                <button type="submit" class="btn btn-primary">Save</button>
-                <Button  class="btn btn-danger" @onclick="ShowModal" formmethod="dialog">Delete</Button>
+                <button type="submit" class="btn btn-primary">Зберегти</button>
+                <Button  class="btn btn-danger" @onclick="ShowModal" formmethod="dialog">Видалити</Button>
                 <button type="button" class="btn btn-secondary" @onclick="Cancel">Скасувати</button>
 
             </div>
@@ -74,7 +74,7 @@ else
 <Modal @ref="modalRef">
     <ModalContent Centered>
         <ModalHeader>
-            <ModalTitle>Confirm Delete</ModalTitle>
+            <ModalTitle>Підтвердження видалення</ModalTitle>
             <CloseButton />
         </ModalHeader>
         <ModalBody>

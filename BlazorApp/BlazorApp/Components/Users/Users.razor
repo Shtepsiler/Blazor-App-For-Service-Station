@@ -32,13 +32,13 @@
                 <div class="card-body">
                     <div class="table-responsive">
                         <QuickGrid Items="@UsersQueryble" class="table table-striped">
-                        <PropertyColumn Property="@(p=>p.UserName)" Sortable="true"></PropertyColumn>
-                        <PropertyColumn Property="@(p=>p.PhoneNumber)" Sortable="true"></PropertyColumn>
-                        <PropertyColumn Property="@(p=>p.Email)" Sortable="true"></PropertyColumn>
-                        <PropertyColumn Property="@(p=>p.EmailConfirmed)" Sortable="true"></PropertyColumn>
-                        <PropertyColumn Property="@(p=>p.Role)" Sortable="true"></PropertyColumn>
-                        <TemplateColumn Title="Action">
-                            <a class="btn border-2 bg-gradient" href="@(ViewUserDetails(context.Id))">Edit</a>
+                            <PropertyColumn Property="@(p=>p.UserName)" Title="Ім'я'" Sortable="true"></PropertyColumn>
+                            <PropertyColumn Property="@(p=>p.PhoneNumber)" Title="Номер телефону" Sortable="true"></PropertyColumn>
+                            <PropertyColumn Property="@(p=>p.Email)" Title="Електронна пошта" Sortable="true"></PropertyColumn>
+                            <PropertyColumn Property="@(p=>p.EmailConfirmed)" Title="" Sortable="true"></PropertyColumn>
+                            <PropertyColumn Property="@(p=>p.Role)" Title="Дії" Sortable="true"></PropertyColumn>
+                        <TemplateColumn Title="Дії">
+                            <a class="btn border-2 bg-gradient" href="@(ViewUserDetails(context.Id))">Змінити</a>
                         </TemplateColumn>
                         </QuickGrid>
                         <Paginator State="paginationState"></Paginator>

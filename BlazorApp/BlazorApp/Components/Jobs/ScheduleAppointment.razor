@@ -1,5 +1,6 @@
 ﻿@page "/ScheduleAppointment"
 @using System.Threading.Tasks
+@using BlazorApp.Extensions.Exceptions
 @using BlazorApp.Extensions.ViewModels.CatalogVMs
 @using BlazorApp.Extensions.ViewModels.JobsVMs
 @using BlazorApp.Services.Interfaces
@@ -52,6 +53,10 @@
     <button type="submit" class="btn btn-primary">Записатися</button>
 </EditForm>
 
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger mt-3">@errorMessage</div>
+}
 
 @code {
     private CreateJobCommand visit = new CreateJobCommand();
@@ -59,7 +64,6 @@
     private List<VehicleViewModel> filteredCarModels = new List<VehicleViewModel>();
     private string searchText = string.Empty;
     private string errorMessage;
-
 
     protected override async Task OnInitializedAsync()
     {
@@ -78,6 +82,10 @@
 
             var carModelsvms = await VehicleService.GetCarModelsAsync();
             carModels = carModelsvms.ToList();
+        }
+        catch (EntityNotFoundException ex)
+        {
+            errorMessage = $"Помилка завантаження даних: {ex.Message}";
         }
         catch (Exception ex)
         {
@@ -104,9 +112,10 @@
     {
         try
         {
+            // Check if the model ID is set
             if (!visit.ModelId.HasValue)
             {
-                // If the model ID is not set, create a new model entry
+                // If the model is not found, create a new model entry
                 var newModel = new VehicleViewModel { FullModelName = searchText };
                 var createdModel = await VehicleService.CreateCarModelAsync(newModel);
                 visit.ModelId = createdModel.Id;
@@ -120,6 +129,4 @@
             errorMessage = $"Помилка запису на візит: {ex.Message}";
         }
     }
-
-
 }

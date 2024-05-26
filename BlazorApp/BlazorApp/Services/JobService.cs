@@ -40,11 +40,18 @@ namespace BlazorApp.Services
             return await httpClient.GetAsync<IEnumerable<JobVM>>("GetJobByMechanicId", parameters);
         }
 
-        public async Task<IEnumerable<JobVM>> GetJobsBYUserId(Guid UserId)
+/*        public async Task<IEnumerable<JobVM>> GetJobsBYUserId(Guid UserId)
         {
             var parameters = new Dictionary<string, string> { {"Id",$"{UserId.ToString()}" } };
 
             return await httpClient.GetAsync<IEnumerable<JobVM>>("GetJobsBYUserId", parameters);
+        }*/
+
+        public async Task<IEnumerable<JobVMForUser>> GetJobsBYUserId(Guid UserId)
+        {
+            var parameters = new Dictionary<string, string> { { "Id", $"{UserId.ToString()}" } };
+
+            return await httpClient.GetAsync<IEnumerable<JobVMForUser>>("GetJobsBYUserId", parameters);
         }
     }
 }

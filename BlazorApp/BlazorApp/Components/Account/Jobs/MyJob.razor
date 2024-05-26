@@ -1,4 +1,4 @@
-﻿@page "/myjobs/job/{jobId:Guid}"
+﻿@page "/myjobs/job/{jobId:guid}"
 
 @using BlazorApp.Extensions.ViewModels.CatalogVMs
 @using BlazorApp.Extensions.ViewModels.IdentityVMs
@@ -31,7 +31,7 @@ else if (job != null)
         <p><strong>ID:</strong> @job.Id.ToString()</p>
         <p><strong>Модель автомобіля:</strong>@job.ModelName</p>
         <p><strong>Опис проблеми:</strong> @job.Description </p>
-        <p><strong>Дата візиту:</strong> @job.IssueDate.ToString("dd/MM/yyyy")</p>
+        <p><strong>Дата візиту:</strong> @job.IssueDate.ToString()</p>
         @if (job.FinishDate != null)
         {
             <p><strong>Дата завершення роботи:</strong> @job.FinishDate.Value.ToString("dd/MM/yyyy")</p>
@@ -98,7 +98,7 @@ else
             {
                 var mechanicViewModels = await UserService.GetMechanics();
                 mechanics = mechanicViewModels.ToList();
-                var tsksViewModels = await TasksService.GetTasksByJobId(job.Id);
+                var tsksViewModels = await TasksService.GetTasksByJobId(job.Id.Value);
                 tasks = tsksViewModels.ToList();
                 TaskViewModelsQueryable = tasks.AsQueryable();
                 if (job.OrderId != null)

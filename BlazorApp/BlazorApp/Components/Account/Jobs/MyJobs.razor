@@ -11,26 +11,28 @@
 @inject IVehicleService VehicleService
 @inject IUserService UserService
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
 <PageTitle>Мої візити</PageTitle>
 
 <h3>Мої візити</h3>
 
 
     <QuickGrid Items="@visitsQueryable" Class="mt-4">
-        <PropertyColumn Property="@(v => (v.ModelId != null)?vehicles.Find(p=>p.Id == v.ModelId).FullModelName:v.ModelName)" Title="Модель автомобіля" />
-         <PropertyColumn Property="@(v => v.Description)" Title="Опис проблеми" />
-        <PropertyColumn Property="@(v => v.IssueDate)" Title="Дата візиту" />
+       
+    <PropertyColumn Property="@(v => v.Description)" Title="Опис проблеми" />
+    <PropertyColumn Property="@(v => v.IssueDate)" Title="Дата візиту" />
         <PropertyColumn Property="@(v => v.Status)" Title="Статус" />
         <TemplateColumn Title="Actions">
-        <button class="btn btn-info" @onclick="() => ViewVisitDetails(context.Id)">Переглянути</button>
+        <button class="btn btn-info" @onclick="() => ViewVisitDetails(context.Id.Value)">Переглянути</button>
         </TemplateColumn>
     </QuickGrid>
 
 
 @code {
 
-    private List<JobVM> visits;
-    private IQueryable<JobVM> visitsQueryable;
+    private List<JobVMForUser> visits;
+    private IQueryable<JobVMForUser> visitsQueryable;
     private List<VehicleViewModel> vehicles = new();
     private string userid;
 
@@ -41,17 +43,18 @@
         var user = authenticationState.User;
         if (user.Identity.IsAuthenticated)
         {
-            var userid = user.Claims.Where(c => c.Type == ClaimTypes.NameIdentifier).Select(c => c.Value).ToList();
-        }
+             userid = user.Claims.Where(c => c.Type == ClaimTypes.NameIdentifier).Select(c => c.Value).FirstOrDefault();
+        }      
+        var visitsVMs = await JobService.GetJobsBYUserId(Guid.Parse(userid));
+        visits = visitsVMs.ToList();
+        visitsQueryable = visits.AsQueryable();
     }
 
 
     private async Task SearchVisits()
     {
         // Приклад запиту до API для отримання робіт користувача
-        var visitsVMs = await JobService.GetJobsBYUserId(Guid.Parse(userid));
-        visits = visitsVMs.ToList();
-        visitsQueryable = visits.AsQueryable();
+ 
     }
 
     private void ViewVisitDetails(Guid visitId)
