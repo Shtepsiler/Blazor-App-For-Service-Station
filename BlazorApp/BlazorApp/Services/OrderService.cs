@@ -32,7 +32,10 @@ namespace BlazorApp.Services
         }
         public async Task AddPartToOrderAsync(Guid orderId, Guid partId)
         {
-            var parameters = new Dictionary<string, string> { };
+            var parameters = new Dictionary<string, string> {
+                {"orderId",orderId.ToString() },
+                {"partId",partId.ToString() }
+            };
 
             await httpClient.PostAsync("AddPartToOrder", parameters);
         }

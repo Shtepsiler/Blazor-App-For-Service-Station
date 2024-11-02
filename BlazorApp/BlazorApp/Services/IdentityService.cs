@@ -18,9 +18,7 @@ namespace BlazorApp.Services
 
         public IdentityService(IHttpClientFactory clientFactory, ApiHttpClient httpClient)
         {
-
             this.httpClient = httpClient.SetHttpClient(clientFactory.CreateClient("Identity")); 
-
         }
         public async Task<JwtViewModel> SignUpAsync(UserSignUpViewModel viewModel)
         {
@@ -32,21 +30,13 @@ namespace BlazorApp.Services
         {
             var response = await httpClient.PostLoginAsync<UserSignInViewModel, JwtViewModel>("signIn", viewModel);
             httpClient.SetJwtToken(response.token);
-
             return response;
         }
         public async Task ResendConfirmationEmailAsync(string Email)
         {
             var parameters = new Dictionary<string, string> { };
-           
-
-
             await httpClient.PutAsync("ResendConfirmationEmail",Email);
         }
-
-
-
-
         public async Task ConfirmEmail(Guid Id, string code)
         {
             var parameters = new Dictionary<string, string>
@@ -54,22 +44,17 @@ namespace BlazorApp.Services
                 {"Id",$"{Id.ToString()}" } ,
                 {"Code",$"{code}" } ,
             };
-
-
             await httpClient.PostAsync("ConfirmEmail", parameters);
-
         }
         public JwtSecurityToken ReadJwt(string tocken)
         {
             return new JwtSecurityTokenHandler().ReadJwtToken(tocken);
         }
-
         public async Task<ClaimsPrincipal> GenerateStateFromToken(JwtSecurityToken token)
         {
             var identity = new ClaimsIdentity(token.Claims, "apiauth_type");
             var principal = new ClaimsPrincipal(identity);
             return principal;
         }
-
     }
 }

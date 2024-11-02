@@ -43,8 +43,7 @@ else
 
 @code {
     [Parameter]
-    public string orderId { get; set; }
-    private Guid OrderId{get{ return Guid.Parse(orderId); }}
+    public Guid orderId { get; set; }
 
     private OrderViewModel order = new();
     private List<PartViewModel> parts;
@@ -55,7 +54,7 @@ else
     {
         try
         {
-            order = await OrderService.GetOrderByIdAsync(OrderId);
+            order = await OrderService.GetOrderByIdAsync(orderId);
 
 
             if (order == null)
@@ -64,9 +63,12 @@ else
             }
             else
             {
-                var partsvm = await PartsService.GetPartsByOrderIdAsync(OrderId);
+                var partsvm = await PartsService.GetPartsByOrderIdAsync(orderId);
+                if(partsvm.Count()>0){
                 parts = partsvm.ToList();             
                 partsQueryable = parts.AsQueryable();
+                }
+
             }
         }
         catch (Exception ex)
@@ -77,15 +79,15 @@ else
 
     private void AddPartToOrder()
     {
-        NavigationManager.NavigateTo($"/catalog?orderId={OrderId}");
+        NavigationManager.NavigateTo($"/catalog?orderId={orderId}");
     }
 
     private async Task RemovePartFromOrder(Guid partId)
     {
         try
         {
-            await OrderService.RemovePartFromOrderAsync(OrderId, partId);
-            var partsvm = await PartsService.GetPartsByOrderIdAsync(OrderId);
+            await OrderService.RemovePartFromOrderAsync(orderId, partId);
+            var partsvm = await PartsService.GetPartsByOrderIdAsync(orderId);
             parts = partsvm.ToList();
             partsQueryable = parts.AsQueryable();
         }

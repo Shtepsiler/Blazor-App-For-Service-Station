@@ -99,8 +99,12 @@ else
                 var mechanicViewModels = await UserService.GetMechanics();
                 mechanics = mechanicViewModels.ToList();
                 var tsksViewModels = await TasksService.GetTasksByJobId(job.Id.Value);
-                tasks = tsksViewModels.ToList();
-                TaskViewModelsQueryable = tasks.AsQueryable();
+                if (tsksViewModels.Count() > 0)
+                {
+                    tasks = tsksViewModels.ToList();
+                    TaskViewModelsQueryable = tasks.AsQueryable();
+                }
+
                 if (job.OrderId != null)
                 {
                     var partsViewModels = await PartService.GetPartsByOrderIdAsync(job.OrderId.Value);

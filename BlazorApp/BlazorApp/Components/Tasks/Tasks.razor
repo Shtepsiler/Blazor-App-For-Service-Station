@@ -36,11 +36,14 @@
         <PropertyColumn Property="@(t => t.Task)" Title="Опис" Sortable="true"></PropertyColumn>
         <PropertyColumn Property="@(t => t.Status)" Title="Статус" Sortable="true"></PropertyColumn>
         <TemplateColumn Title="Механік">
-            <span>@(mechanics.Where(p => p.Id == context.Id).Select(p => p.UserName).FirstOrDefault())</span>
+            <span>@(@mechanics.FirstOrDefault(p => p.Id == context.MechanicId)?.UserName)</span>
         </TemplateColumn>
         <TemplateColumn Title="Дії">
             <button class="btn btn-secondary" @onclick="() => EditTask(context.Id)">Змінити</button>
+                                <AuthorizeView Roles="Admin">
+                        <ChildContent Context="authContext">
             <button class="btn btn-danger" @onclick="() => DeleteTask(context.Id)">Видалити</button>
+            </ChildContent></AuthorizeView>
         </TemplateColumn>
     </QuickGrid>
 }
@@ -88,12 +91,14 @@ else
                     var tasksvms =  await TaskService.GetTasks();
                     tasks = tasksvms.AsQueryable();
 
-            }
+                }
                 if (roles.FirstOrDefault().Equals("Mechaic"))
                 {
                     var tasksvms = await TaskService.GetTasksByMechanic(Guid.Parse(user.Claims.Where(c => c.Type == ClaimTypes.NameIdentifier).First().Value));
                     tasks = tasksvms.AsQueryable();      
                 }
+                var mechanicVMs = await UserService.GetMechanics();
+                mechanics = mechanicVMs.ToList();
             }
             catch (Exception e)
             {

@@ -42,7 +42,7 @@ namespace BlazorApp.Services
 
         public async Task<IEnumerable<PartViewModel>> GetPartsByOrderIdAsync(Guid orderId)
         {
-         return await httpClient.GetAsync<IEnumerable<PartViewModel>>($"GetPartsByOrderId/{orderId.ToString()}");
+         return await httpClient.GetAsync<IEnumerable<PartViewModel>>($"GetPartsByOrderId?OrderId={orderId.ToString()}");
         }
     }
 }

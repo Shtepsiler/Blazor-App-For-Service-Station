@@ -5,6 +5,7 @@
 @using BlazorApp.Extensions.ViewModels.CatalogVMs
 @inject IPartsService PartService
 @inject ICategoryService CategoryService
+@inject IOrderService OrderService
 @inject NavigationManager NavigationManager
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 
@@ -20,11 +21,15 @@
                 {
                     <li class="list-group-item d-flex justify-content-between align-items-center">
                         <span @onclick="() => FilterByCategory(category)">@category.Title</span>
+                        <AuthorizeView Roles="Admin">
                         <button class="btn btn-sm btn-secondary" @onclick="() => EditCategory(category.Id.Value)">Редагувати</button>
+                        </AuthorizeView>
                     </li>
                 }
             </ul>
+            <AuthorizeView Roles="Admin">
             <button class="btn btn-primary mt-3" @onclick="AddCategory">Додати категорію</button>
+            </AuthorizeView>
         </div>
         <div class="col-md-9">
             <div class="d-flex justify-content-between mb-3">
@@ -37,7 +42,9 @@
                     <button class="btn btn-primary" @onclick="GoToOrder">Перейти до замовлення</button>
                 }
             </div>
+            <AuthorizeView Roles="Admin">
             <button class="btn btn-primary mb-3" @onclick="AddPart">Додати запчастину</button>
+            </AuthorizeView>
             <QuickGrid Items="@PartsQueryable">
                 <PropertyColumn Property="@(p => p.Id)" Title="ID" Sortable="true"></PropertyColumn>
                 <PropertyColumn Property="@(p => p.PartName)" Title="Назва" Sortable="true"></PropertyColumn>
@@ -61,7 +68,7 @@
 
 @code {
     [SupplyParameterFromQuery]
-    public Guid orderId { get; set; }
+    public Guid orderId { get; set; } = Guid.Empty;
 
     private List<PartViewModel> parts = new List<PartViewModel>();
     private List<PartViewModel> filteredParts = new List<PartViewModel>();
@@ -134,9 +141,8 @@
         NavigationManager.NavigateTo($"/orders/{orderId}");
     }
 
-    private void AddToOrder(Guid partId)
+    private async void AddToOrder(Guid partId)
     {
-        // Додайте логіку для додавання товару до замовлення
-      //  Console.WriteLine($"Товар з ID {partId} доданий до замовлення {orderId}");
+      await OrderService.AddPartToOrderAsync(orderId,partId);
     }
 }

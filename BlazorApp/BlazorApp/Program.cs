@@ -69,7 +69,7 @@ builder.Services.AddHttpClient("Identity", client =>
 .ConfigurePrimaryHttpMessageHandler(() =>
 {
     var handler = new HttpClientHandler();
-    handler.CookieContainer = new CookieContainer(); // Configure CookieContainer here
+    handler.CookieContainer = new CookieContainer(); 
     return handler;
 });
 

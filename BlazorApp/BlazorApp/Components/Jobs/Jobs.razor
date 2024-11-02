@@ -19,10 +19,10 @@
 @inject IVehicleService VehickeService
 
 <PageTitle>Роботи</PageTitle>
-
+<AuthorizeView Roles="Admin">
 <h3>Роботи</h3>
 
-<AuthorizeView Roles="Admin">
+
     <div>
         <Button @onclick="ShowAddJobModal">Додати нову роботу</Button>
 
@@ -58,6 +58,7 @@
     </div>
 </AuthorizeView>
 <AuthorizeView Roles="Mechanic">
+    <h3>Мої роботи</h3>
 
     <div>
 

@@ -17,7 +17,6 @@
 
 <EditForm Model="@task" OnValidSubmit="SaveTask">
     <DataAnnotationsValidator />
-    
 
     <div class="mb-3">
         <label for="title" class="form-label">Назва</label>
@@ -28,13 +27,22 @@
         <InputTextArea @bind-Value="task.Task" id="description" class="form-control" />
     </div>
     <div class="mb-3">
-        <label for="mechanic" class="form-label">Мехакік</label>
-        <InputSelect @bind-Value="task.MechanicId" id="mechanic" class="form-select">
-            @foreach (var mechanic in mechanics)
-            {
-                <option value="@mechanic.Id">@mechanic.UserName</option>
-            }
-        </InputSelect>
+        <label for="mechanic" class="form-label">Механік</label>
+        <AuthorizeView Roles="Admin">
+            <Authorized Context="adminContext">
+                <InputSelect @bind-Value="task.MechanicId" id="mechanic" class="form-select">
+                    @foreach (var mechanic in mechanics)
+                    {
+                        <option value="@mechanic.Id">@mechanic.UserName</option>
+                    }
+                </InputSelect>
+            </Authorized>
+        </AuthorizeView>
+        <AuthorizeView Roles="Mechanic">
+            <Authorized Context="mechanicContext">
+                <span>@mechanics.FirstOrDefault(p => p.Id == task.MechanicId)?.UserName</span>
+            </Authorized>
+        </AuthorizeView>
     </div>
     <div class="mb-3">
         <label for="status" class="form-label">Статус</label>
@@ -46,12 +54,15 @@
     </div>
     <button type="submit" class="btn btn-primary">Зберегти</button>
     @if (TaskId != Guid.Empty)
-    {
+    {        <AuthorizeView Roles="Admin">
+            <Authorized Context="adminContext">
         <button type="button" class="btn btn-warning" @onclick="Delete">Видалити</button>
+        </Authorized>
+        </AuthorizeView>
     }
     <button type="button" class="btn btn-secondary" @onclick="Cancel">Скасувати</button>
-
 </EditForm>
+
 
 @code {
     [Parameter]
