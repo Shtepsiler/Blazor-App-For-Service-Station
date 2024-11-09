@@ -1,7 +1,7 @@
 ﻿using BlazorApp.Extensions;
 using BlazorApp.Extensions.ViewModels.JobsVMs;
+using BlazorApp.Extensions.ViewModels.Model;
 using BlazorApp.Services.Interfaces;
-using Microsoft.CodeAnalysis.CSharp;
 
 namespace BlazorApp.Services
 {
@@ -16,21 +16,54 @@ namespace BlazorApp.Services
 
         }
 
-        public async Task CreateVisitAsync(CreateJobCommand command)
+
+        public async Task UpdateModelAproved(UpdateModelAprovedMV request)
+        {
+
+            await httpClient.PutAsync<UpdateModelAprovedMV>("updateModelAproved", request);
+
+        }
+
+
+
+        public async Task CreateVisitAsync(CreateJobRequesst command)
         {
             var parameters = new Dictionary<string, string> { };
 
-            await httpClient.PostAsync("", parameters,command);
+            await httpClient.PostAsync("", parameters, command);
         }
+
+        public async Task AddOrder(Guid id,Guid OrderId)
+        {
+            var parameters = new Dictionary<string, string> {
+                {"Id",id.ToString() },
+                {"OrderId",OrderId.ToString() }
+            };
+
+            await httpClient.PostAsync("AddOrderToJob", parameters);
+        }
+
+
 
         public async Task<IEnumerable<JobVM>> GetAllJobs()
         {
-           return await httpClient.GetAsync<IEnumerable<JobVM>>("");
+            return await httpClient.GetAsync<IEnumerable<JobVM>>("");
         }
 
         public async Task<JobVM> GetJobById(Guid Id)
         {
             return await httpClient.GetAsync<JobVM>(Id.ToString());
+        }
+        public async Task<RetrainRequest> GetRetrainData(float conf, bool choseApproverd)
+        {
+            // Форматуємо conf з використанням крапки як роздільника дробу
+            var parameters = new Dictionary<string, string>
+            {
+                { "confidence", conf.ToString("G", System.Globalization.CultureInfo.InvariantCulture) },
+                { "choseApproverd", $"{choseApproverd}" }
+            };
+
+            return await httpClient.GetAsync<RetrainRequest>("uncertain-samples", parameters);
         }
 
         public async Task<IEnumerable<JobVM>> GetJobByMechanicId(Guid MechanicId)
@@ -40,12 +73,12 @@ namespace BlazorApp.Services
             return await httpClient.GetAsync<IEnumerable<JobVM>>("GetJobByMechanicId", parameters);
         }
 
-/*        public async Task<IEnumerable<JobVM>> GetJobsBYUserId(Guid UserId)
-        {
-            var parameters = new Dictionary<string, string> { {"Id",$"{UserId.ToString()}" } };
+        /*        public async Task<IEnumerable<JobVM>> GetJobsBYUserId(Guid UserId)
+                {
+                    var parameters = new Dictionary<string, string> { {"Id",$"{UserId.ToString()}" } };
 
-            return await httpClient.GetAsync<IEnumerable<JobVM>>("GetJobsBYUserId", parameters);
-        }*/
+                    return await httpClient.GetAsync<IEnumerable<JobVM>>("GetJobsBYUserId", parameters);
+                }*/
 
         public async Task<IEnumerable<JobVMForUser>> GetJobsBYUserId(Guid UserId)
         {

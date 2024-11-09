@@ -1,4 +1,3 @@
-using BlazorApp.Components.Account;
 using BlazorApp.Components.Account.Pages;
 using BlazorApp.Components.Account.Pages.Manage;
 using BlazorApp.Data;
@@ -13,7 +12,7 @@ using Microsoft.Extensions.Primitives;
 using System.Security.Claims;
 using System.Text.Json;
 
-namespace Microsoft.AspNetCore.Routing
+namespace BlazorApp.Components.Account
 {
     internal static class IdentityComponentsEndpointRouteBuilderExtensions
     {

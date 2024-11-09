@@ -5,6 +5,7 @@
 @using BlazorApp.Services.Interfaces
 @using Microsoft.AspNetCore.Components.QuickGrid
 @using System.Security.Claims
+@using Microsoft.AspNetCore.Identity
 @inject ITasksService TaskService
 @inject IUserService UserService
 @inject NavigationManager Navigation
@@ -13,19 +14,17 @@
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 @if (mechanics != null && tasks != null)
 {
-<h3>Tasks</h3>
-<AuthorizeView Roles="Admin">
-<div class="mb-3">
-    <label for="mechanicSelect" class="form-label">Оберіть механіка:</label>
-    <InputSelect @bind-Value="selectedMechanic" id="mechanicSelect" class="form-select">
-        <option value="">All</option>
-        @foreach (var mechanic in mechanics)
+    <h3>Tasks</h3>
+    <AuthorizeView Roles="Admin">
+        <div class="mb-3">
+            <label for="mechanicSelect" class="form-label">Оберіть механіка:</label>
+            <select @onchange="OnMechanicChange" id="mechanicSelect" class="form-select">
+                <option value="">All</option>
+                @foreach (var mechanic in mechanics)
                 {
-                    <option value="@mechanic.Id
-                    ">@mechanic.UserName
-                    </option>
+                    <option value="@mechanic.Id">@mechanic.UserName</option>
                 }
-            </InputSelect>
+            </select>
         </div>
 
         <button class="btn btn-primary" @onclick="AddTask">Додати завдання</button>
@@ -35,15 +34,27 @@
         <PropertyColumn Property="@(t => t.Name)" Title="Назва" Sortable="true"></PropertyColumn>
         <PropertyColumn Property="@(t => t.Task)" Title="Опис" Sortable="true"></PropertyColumn>
         <PropertyColumn Property="@(t => t.Status)" Title="Статус" Sortable="true"></PropertyColumn>
-        <TemplateColumn Title="Механік">
-            <span>@(@mechanics.FirstOrDefault(p => p.Id == context.MechanicId)?.UserName)</span>
+
+        <TemplateColumn Title="Механік" Context="task">
+            @if (mechanics != null)
+            {
+                var mech = mechanics.FirstOrDefault(p => p.Id == task.MechanicId);
+                if (mech != null)
+                {
+                    <span>@(mech.UserName)</span>
+                }
+                else
+                {
+                    <span>Не знайдено</span>
+                }
+            }
         </TemplateColumn>
-        <TemplateColumn Title="Дії">
-            <button class="btn btn-secondary" @onclick="() => EditTask(context.Id)">Змінити</button>
-                                <AuthorizeView Roles="Admin">
-                        <ChildContent Context="authContext">
-            <button class="btn btn-danger" @onclick="() => DeleteTask(context.Id)">Видалити</button>
-            </ChildContent></AuthorizeView>
+
+        <TemplateColumn Title="Дії" Context="task">
+            <button class="btn btn-secondary" @onclick="() => EditTask(task.Id)">Змінити</button>
+            <AuthorizeView Roles="Admin">
+                <button class="btn btn-danger" @onclick="() => DeleteTask(task.Id)">Видалити</button>
+            </AuthorizeView>
         </TemplateColumn>
     </QuickGrid>
 }
@@ -51,60 +62,57 @@ else
 {
     <div>Завантаження</div>
 }
+
 @code {
-    private IQueryable<TaskViewModel> tasks = Enumerable.Empty < TaskViewModel >().AsQueryable();
+    private IQueryable<TaskViewModel> tasks = Enumerable.Empty<TaskViewModel>().AsQueryable();
     private List<MechanicViewModel> mechanics;
-    private Guid selectedMechanic;
+    private Guid? selectedMechanic;
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            var tasksVMS = await TaskService.GetTasks();
-            tasks = tasksVMS.AsQueryable();
-
-            var mechanicsVMs = await UserService.GetMechanics();
-            mechanics = mechanicsVMs.ToList();
+            var authenticationState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var user = authenticationState.User;
+            if (user.IsInRole("Mechanic"))
+            {
+                // Отримуємо Id користувача з claims
+                var userIdClaim = user.FindFirst(c => c.Type == new ClaimsIdentityOptions().UserIdClaimType); // "sub" часто використовується для Id
+                if (userIdClaim != null)
+                {
+                    selectedMechanic = Guid.Parse(userIdClaim.Value);
+                }
+            }
         }
-        catch(Exception e)
-        { }
+        catch
+        {
+            selectedMechanic = null;
+        }
+    
+    await LoadTasks();
     }
 
     private async Task LoadTasks()
     {
-
-
-        tasks = (selectedMechanic == null || selectedMechanic == Guid.Empty) ?
-                 TaskService.GetTasks().Result.AsQueryable() :
-                 TaskService.GetTasksByMechanic(selectedMechanic).Result.AsQueryable();
-
-        var authenticationState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        var user = authenticationState.User;
-        if (user.Identity.IsAuthenticated)
+        try
         {
-            var roles = user.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => c.Value).ToList();
-            // Опрацюйте ролі користувача тут
-            try
-            {
-                if (roles.FirstOrDefault().Equals("Admin"))
-                {
-                    var tasksvms =  await TaskService.GetTasks();
-                    tasks = tasksvms.AsQueryable();
+            tasks = (selectedMechanic == null || selectedMechanic == Guid.Empty)
+                ? (await TaskService.GetTasks()).AsQueryable()
+                : (await TaskService.GetTasksByMechanic(selectedMechanic.Value)).AsQueryable();
 
-                }
-                if (roles.FirstOrDefault().Equals("Mechaic"))
-                {
-                    var tasksvms = await TaskService.GetTasksByMechanic(Guid.Parse(user.Claims.Where(c => c.Type == ClaimTypes.NameIdentifier).First().Value));
-                    tasks = tasksvms.AsQueryable();      
-                }
-                var mechanicVMs = await UserService.GetMechanics();
-                mechanics = mechanicVMs.ToList();
-            }
-            catch (Exception e)
-            {
-
-            }
+            var mechanicsVMs = await UserService.GetMechanics();
+            mechanics = mechanicsVMs.ToList();
         }
+        catch (Exception e)
+        {
+            // Handle exception if needed
+        }
+    }
+
+    private async Task OnMechanicChange(ChangeEventArgs e)
+    {
+        selectedMechanic = Guid.TryParse(e.Value?.ToString(), out var mechanicId) ? mechanicId : (Guid?)null;
+        await LoadTasks();
     }
 
     private void AddTask()

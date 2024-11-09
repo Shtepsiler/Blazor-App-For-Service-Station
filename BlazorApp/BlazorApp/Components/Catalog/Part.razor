@@ -8,7 +8,7 @@
 @inject IJSRuntime JS
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 
-<h3>@((Guid.Empty  == partId || partId == null) ? "Редагувати запчастину" : "Додати запчастину")</h3>
+<h3>@((partId == Guid.Empty || partId == null) ? "Додати запчастину" : "Редагувати запчастину")</h3>
 
 <EditForm Model="@part" OnValidSubmit="SavePart">
     <DataAnnotationsValidator />

@@ -49,15 +49,18 @@ builder.Services.AddIdentityCore<ApplicationUser>(options => options.SignIn.Requ
     .AddDefaultTokenProviders();
 
 
-builder.Services.AddScoped<IIdentityService, IdentityService>();
-builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
+builder.Services.AddScoped<IChooseModelService, ChooseModelService>();
+builder.Services.AddScoped<IIdentityService, IdentityService>();
 builder.Services.AddScoped<IJobService, JobService>();
+builder.Services.AddScoped<IMachineLerningService, MachineLerningService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
-builder.Services.AddScoped<IRoleService, RoleService>();
-builder.Services.AddScoped<ITasksService, TasksService>();
-builder.Services.AddScoped<IVehicleService, VehicleService>();
 builder.Services.AddScoped<IPartsService, PartsService>();
+builder.Services.AddScoped<IRoleService, RoleService>();
+builder.Services.AddScoped<ISpecialisationsService, SpecialisationsService>();
+builder.Services.AddScoped<ITasksService, TasksService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IVehicleService, VehicleService>();
 
 
 
@@ -159,6 +162,39 @@ builder.Services.AddHttpClient("Part", client =>
 builder.Services.AddHttpClient("Vehicle", client =>
 {
     client.BaseAddress = new Uri($"{APIBaseString}parts/Vehicle/");
+    client.DefaultRequestHeaders.Add("Accept", "text/plain");
+})
+.ConfigurePrimaryHttpMessageHandler(() =>
+{
+    var handler = new HttpClientHandler();
+    handler.CookieContainer = new CookieContainer();
+    return handler;
+});
+builder.Services.AddHttpClient("Parts", client =>
+{
+    client.BaseAddress = new Uri($"{APIBaseString}parts/");
+    client.DefaultRequestHeaders.Add("Accept", "text/plain");
+})
+.ConfigurePrimaryHttpMessageHandler(() =>
+{
+    var handler = new HttpClientHandler();
+    handler.CookieContainer = new CookieContainer();
+    return handler;
+});
+builder.Services.AddHttpClient("Model", client =>
+{
+    client.BaseAddress = new Uri($"{APIBaseString}model/");
+    client.DefaultRequestHeaders.Add("Accept", "text/plain");
+})
+.ConfigurePrimaryHttpMessageHandler(() =>
+{
+    var handler = new HttpClientHandler();
+    handler.CookieContainer = new CookieContainer();
+    return handler;
+});
+builder.Services.AddHttpClient("Specialisations", client =>
+{
+    client.BaseAddress = new Uri($"{APIBaseString}jobs/Specialisation/");
     client.DefaultRequestHeaders.Add("Accept", "text/plain");
 })
 .ConfigurePrimaryHttpMessageHandler(() =>

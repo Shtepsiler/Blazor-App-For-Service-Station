@@ -26,7 +26,9 @@ namespace BlazorApp.Services
         }
         public async Task RemovePartFromOrderAsync(Guid orderId, Guid partId)
         {
-            var parameters = new Dictionary<string, string> { };
+            var parameters = new Dictionary<string, string> {    
+                {"orderId",orderId.ToString() },
+                {"partId",partId.ToString() } };
 
             await httpClient.PostAsync("RemovePartFromOrder", parameters);
         }

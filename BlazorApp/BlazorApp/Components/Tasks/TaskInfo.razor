@@ -5,16 +5,18 @@
 @using BlazorApp.Extensions.ViewModels.IdentityVMs
 @using BlazorApp.Services.Interfaces
 @using Blazorise
+@using Microsoft.AspNetCore.Identity
 @inject ITasksService TaskService
 @inject NavigationManager Navigation
 @inject IModalService ModalService
 @inject IUserService UserService
 @inject IJSRuntime JS
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 <h3>@(TaskId == Guid.Empty ? "Add Task" : "Edit Task")</h3>
-
+@if (mechanics!=null){
 <EditForm Model="@task" OnValidSubmit="SaveTask">
     <DataAnnotationsValidator />
 
@@ -28,21 +30,15 @@
     </div>
     <div class="mb-3">
         <label for="mechanic" class="form-label">Механік</label>
-        <AuthorizeView Roles="Admin">
-            <Authorized Context="adminContext">
-                <InputSelect @bind-Value="task.MechanicId" id="mechanic" class="form-select">
-                    @foreach (var mechanic in mechanics)
-                    {
-                        <option value="@mechanic.Id">@mechanic.UserName</option>
-                    }
-                </InputSelect>
-            </Authorized>
-        </AuthorizeView>
-        <AuthorizeView Roles="Mechanic">
-            <Authorized Context="mechanicContext">
-                <span>@mechanics.FirstOrDefault(p => p.Id == task.MechanicId)?.UserName</span>
-            </Authorized>
-        </AuthorizeView>
+            <select id="mechanic" class="form-select" @bind="task.MechanicId">
+                @foreach (var mechanic in mechanics)
+                {
+                    <option value="@mechanic.Id" selected="@(task.MechanicId == mechanic.Id ? "selected" : null)">
+                        @mechanic.UserName
+                    </option>
+                }
+            </select>
+
     </div>
     <div class="mb-3">
         <label for="status" class="form-label">Статус</label>
@@ -53,67 +49,138 @@
         </InputSelect>
     </div>
     <button type="submit" class="btn btn-primary">Зберегти</button>
-    @if (TaskId != Guid.Empty)
-    {        <AuthorizeView Roles="Admin">
-            <Authorized Context="adminContext">
-        <button type="button" class="btn btn-warning" @onclick="Delete">Видалити</button>
-        </Authorized>
-        </AuthorizeView>
-    }
     <button type="button" class="btn btn-secondary" @onclick="Cancel">Скасувати</button>
 </EditForm>
-
+}
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger mt-3">@errorMessage</div>
+}
 
 @code {
     [Parameter]
     public Guid TaskId { get; set; }
     [SupplyParameterFromQuery]
     public Guid? JobId { get; set;} 
-
+    private string errorMessage;
+    private JobVM job; 
     private TaskViewModel task = new TaskViewModel();
-
-    private List<MechanicViewModel> mechanics = new();
+    private MechanicViewModel selectedMechanic;
+    private List<MechanicViewModel> mechanics ;
 
     protected override async Task OnInitializedAsync()
     {
+        var authenticationState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authenticationState.User;
+        task.Status = "Pending";
+
         try
         {
             var mechanicsVMs = await UserService.GetMechanics();
             mechanics = mechanicsVMs.ToList();
+
+            // Якщо це редагування, завантажуємо завдання
+            if (TaskId != Guid.Empty)
+            {
+                task = await TaskService.GetTask(TaskId);
+
+                // Якщо механік уже встановлений, перевіряємо, чи існує він у списку
+                if (task.MechanicId != null && mechanics.Any(m => m.Id == task.MechanicId))
+                {
+                    selectedMechanic = mechanics.First(p => p.Id == task.MechanicId);
+
+                }
+
+            }
+
+
+            if (JobId.HasValue) // Якщо створення, прив'язуємо JobId
+            {
+                task.JobId = JobId.Value;
+            }
+            // Якщо залогінений користувач - механік, встановлюємо його за замовчуванням
+            if (user.IsInRole("Mechanic"))
+            {
+                // Отримуємо Id користувача з claims
+                var userIdClaim = user.FindFirst(c => c.Type == new ClaimsIdentityOptions().UserIdClaimType); 
+                if (userIdClaim != null)
+                {
+                    var userId = Guid.Parse(userIdClaim.Value); 
+
+                    if (TaskId == Guid.Empty)
+                    {
+                        task.MechanicId = userId;
+                    }
+                    
+                    if(task.MechanicId == userId)
+                        selectedMechanic = mechanics.First(p => p.Id == userId);
+
+
+
+
+                    }
+                }
+          
         }
-        catch(Exception e) { }
-
-
-        if (TaskId != Guid.Empty)
+        catch (Exception e)
         {
-            task = await TaskService.GetTask(TaskId);
+            errorMessage = e.Message;
         }
     }
+
 
     private async Task SaveTask()
     {
-        if (TaskId == Guid.Empty)
+        try
         {
-            await TaskService.AddTask(task);
+            if (TaskId == Guid.Empty)
+            {
+                task.JobId = JobId; // Прив'язуємо JobId до 
+                await TaskService.AddTask(task);
+                JS.InvokeVoidAsync("alert", "Завдання успішно додано!");
+            }
+            else
+            {
+                await TaskService.UpdateTask(task);
+                JS.InvokeVoidAsync("alert", "Завдання успішно оновлено!");
+            }
+            if (JobId == null || JobId == Guid.Empty)
+                Navigation.NavigateTo("/tasks");
+            else
+                Navigation.NavigateTo($"/job-info/{JobId}");
         }
-        else
+        catch (Exception e)
         {
-            task.JobId = JobId;
-            await TaskService.UpdateTask(task);
+            errorMessage = e.Message;
         }
-        JS.InvokeVoidAsync("alert", "Завдання успішно додано!").GetAwaiter();
-
-        Navigation.NavigateTo("/tasks");
     }
     private void Cancel()
     {
-        Navigation.NavigateTo("/tasks");
+        if (JobId == null || JobId == Guid.Empty)
+            Navigation.NavigateTo("/tasks");
+        else
+            Navigation.NavigateTo($"/job-info/{JobId}");
     }
-
+    private async Task MechanicChanged(ChangeEventArgs e)
+    {
+        task.MechanicId = Guid.Parse(e.Value.ToString());
+        await JS.InvokeVoidAsync("console.log", $"Selected Mechanic ID: {task.MechanicId}");
+    }
     private async Task Delete()
     {
+        try
+        {
         await TaskService.DeleteTask(TaskId);
-        JS.InvokeVoidAsync("alert", "Завдання успішно видалено!").GetAwaiter();
-        Navigation.NavigateTo("/tasks");
+            JS.InvokeVoidAsync("alert", "Завдання успішно видалено!").GetAwaiter();
+            if (JobId == null || JobId == Guid.Empty)
+                Navigation.NavigateTo("/tasks");
+            else
+                Navigation.NavigateTo($"/job-info/{JobId}");
+        }
+        catch (Exception e)
+        {
+            errorMessage = e.Message;
+        }
+  
     }
 }

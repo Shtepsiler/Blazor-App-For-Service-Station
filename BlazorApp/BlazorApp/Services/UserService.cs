@@ -132,11 +132,6 @@ namespace BlazorApp.Services
 
         }
 
-        public async Task<IEnumerable<MechanicViewModel>> GetMechanics()
-        {
-            return await httpClient.GetAsync<IEnumerable<MechanicViewModel>>("GetMechanics");
-        }
-
         public async Task DeleteUser(Guid Id)
         {
             await httpClient.DeleteAsync(Id.ToString());
@@ -146,6 +141,16 @@ namespace BlazorApp.Services
         public async Task SaveChanges(UserViewModel model)
         {
             await httpClient.PutAsync("",model);
+        }
+
+        public async Task<IEnumerable<MechanicViewModel>> GetMechanics()
+        {
+            return await httpClient.GetAsync<IEnumerable<MechanicViewModel>>("GetMechanics");
+        }
+
+        public async Task<MechanicViewModel> GetMechanic(Guid Id)
+        {
+            return await httpClient.GetAsync<MechanicViewModel>($"GetMechanic?Id={Id.ToString()}");
         }
     }
 

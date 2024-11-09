@@ -7,6 +7,8 @@
 @inject ICategoryService CategoryService
 @inject IOrderService OrderService
 @inject NavigationManager NavigationManager
+@inject IJSRuntime JS
+
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 <h3>Каталог запчастин</h3>
@@ -66,10 +68,14 @@
     </div>
 </div>
 
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger mt-3">@errorMessage</div>
+}
 @code {
     [SupplyParameterFromQuery]
     public Guid orderId { get; set; } = Guid.Empty;
-
+    private string errorMessage;
     private List<PartViewModel> parts = new List<PartViewModel>();
     private List<PartViewModel> filteredParts = new List<PartViewModel>();
     private IQueryable<PartViewModel> PartsQueryable = Enumerable.Empty<PartViewModel>().AsQueryable();
@@ -85,14 +91,21 @@
             filteredParts = parts;
             PartsQueryable = filteredParts.AsQueryable();
         }
-        catch (Exception e) { }
+        catch (Exception e)
+        {
+
+            errorMessage = e.Message;
+        }
 
         try
         {
             var categoriesVMs = await CategoryService.GetAllCategoriesAsync();
             categories = categoriesVMs.ToList();
         }
-        catch (Exception e) { }
+        catch (Exception e)
+        {
+            errorMessage = e.Message;
+        }
     }
 
     private void SearchParts()
@@ -143,6 +156,14 @@
 
     private async void AddToOrder(Guid partId)
     {
-      await OrderService.AddPartToOrderAsync(orderId,partId);
+        try
+        {
+            await OrderService.AddPartToOrderAsync(orderId, partId);
+            await JS.InvokeVoidAsync("showTemporaryAlert", "Запчастина успішно збережена!", 3000); // 3000 мс = 3 секунди
+        }
+        catch (Exception e)
+        {
+            errorMessage = e.Message;
+        }
     }
 }

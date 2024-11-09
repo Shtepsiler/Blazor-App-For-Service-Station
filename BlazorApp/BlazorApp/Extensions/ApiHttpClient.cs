@@ -196,6 +196,17 @@ namespace BlazorApp.Extensions
 
             return JsonSerializer.Deserialize<TOut>(responseBody, options);
         }
+        public async Task<string> PostAsyncGetString<T>(string requestUri, T viewModel)
+        {
+            ValidateAndLogUri(requestUri);
+
+            var response = await httpClient.PostAsJsonAsync(requestUri, viewModel, options);
+            var responseBody = await response.Content.ReadAsStringAsync();
+            StatusCodeHandler.TryHandleStatusCode(response.StatusCode, responseBody);
+
+
+            return responseBody;
+        }
 
         public async Task PostFormDataAsync(string requestUri, MultipartFormDataContent content)
         {
@@ -205,7 +216,16 @@ namespace BlazorApp.Extensions
             var responseBody = await response.Content.ReadAsStringAsync();
             StatusCodeHandler.TryHandleStatusCode(response.StatusCode, responseBody);
         }
+       public async Task PutParametrsAsync(string requestUri, IDictionary<string, string> parameters)
+        {
+            ValidateAndLogUri(requestUri);
+            var uri = BuildUriWithParameters(requestUri, parameters);
 
+            var response = await httpClient.PutAsJsonAsync(uri, options);
+            var responseBody = await response.Content.ReadAsStringAsync();
+            StatusCodeHandler.TryHandleStatusCode(response.StatusCode, responseBody);
+
+        }
         public async Task PutAsync<T>(string requestUri, T viewModel)
         {
             ValidateAndLogUri(requestUri);
@@ -215,6 +235,7 @@ namespace BlazorApp.Extensions
             StatusCodeHandler.TryHandleStatusCode(response.StatusCode, responseBody);
    
         }
+ 
 
         public async Task PutAsync<T>(string requestUri, IDictionary<string, string> parameters, T viewModel)
         {

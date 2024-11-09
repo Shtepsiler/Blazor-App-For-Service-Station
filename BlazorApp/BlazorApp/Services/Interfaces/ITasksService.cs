@@ -12,6 +12,6 @@ namespace BlazorApp.Services.Interfaces
         Task AddTask(TaskViewModel taskViewModel);
         Task UpdateTask(TaskViewModel taskViewModel);
         Task<IEnumerable<TaskViewModel>> GetTasksByJobId(Guid Id);
-
+        Task UpdateTaskStatus(Guid id, string status);
     }
 }
