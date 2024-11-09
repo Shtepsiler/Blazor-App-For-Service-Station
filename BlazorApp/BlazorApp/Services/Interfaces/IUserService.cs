@@ -16,6 +16,7 @@ namespace BlazorApp.Services.Interfaces
         Task ResetPassword(Guid Id, string Code, string newPasword);
         Task SetPhoneNumber(UserService.SetPhoneNumberRequest request);
         Task<IEnumerable<MechanicViewModel>> GetMechanics();
+        Task<MechanicViewModel> GetMechanic(Guid Id);
         Task DeleteUser(Guid Id);
         Task SaveChanges(UserViewModel modek);
     }

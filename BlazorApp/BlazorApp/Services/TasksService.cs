@@ -54,5 +54,14 @@ namespace BlazorApp.Services
         {
             await httpClient.PutAsync("",taskViewModel);
         }
+        public async Task UpdateTaskStatus(Guid id, string status)
+        {
+            var parameters = new Dictionary<string, string> { 
+                { "Id", $"{id.ToString()}" } ,
+                { "Status", status } 
+            };
+
+            await httpClient.PutParametrsAsync("updateStatus", parameters);
+        }
     }
 }

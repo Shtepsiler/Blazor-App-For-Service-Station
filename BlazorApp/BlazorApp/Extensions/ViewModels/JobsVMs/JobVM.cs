@@ -4,9 +4,11 @@
     {
         public Guid? Id { get; set; }
         public Guid? ManagerId { get; set; }
-        public Guid? ModelId { get; set; }
+        public Guid? VehicleId { get; set; }
         public string? ModelName { get; set; }
         public string? Status { get; set; }
+        public string? Specialisation { get; set; }
+
         public Guid? ClientId { get; set; }
         public Guid? OrderId { get; set; }
         public Guid? MechanicId { get; set; }

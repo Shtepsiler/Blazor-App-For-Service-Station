@@ -14,6 +14,7 @@
 @inject IUserService UserService
 @inject IPartsService PartService
 @inject IJSRuntime JS
+@inject IVehicleService VehicleService
 
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 
@@ -25,12 +26,15 @@
 {
     <div class="alert alert-danger">@errorMessage</div>
 }
-else if (job != null)
+else if (job != null && mainMechanic != null)
 {
     <div>
         <p><strong>ID:</strong> @job.Id.ToString()</p>
         <p><strong>Модель автомобіля:</strong>@job.ModelName</p>
         <p><strong>Опис проблеми:</strong> @job.Description </p>
+        <p><strong>Специфікація:</strong> @job.Specialisation </p>
+        <p><strong>Відповідальний механік:</strong> @mainMechanic.UserName </p>
+
         <p><strong>Дата візиту:</strong> @job.IssueDate.ToString()</p>
         @if (job.FinishDate != null)
         {
@@ -43,7 +47,15 @@ else if (job != null)
             <PropertyColumn Property="@(t => t.Task)" Title="Опис"></PropertyColumn>
             <PropertyColumn Property="@(t => t.Status)" Title="Статус" Sortable="true"></PropertyColumn>
             <TemplateColumn Title="Механік">
-                <span>@(mechanics.Where(p => p.Id == context.MechanicId).FirstOrDefault().UserName)</span>
+                @if (context.MechanicId != null)
+                {
+                    var vehicle = mechanics.FirstOrDefault(p => p.Id == context.MechanicId);
+                    <span>@(vehicle != null ? vehicle.UserName : "Механік не знайдений")</span>
+                }
+                else
+                {
+                    <span>@(job.ModelName ?? "Механік не вказаний")</span>
+                }
             </TemplateColumn>
         </QuickGrid>
         @if (parts!=null)
@@ -68,10 +80,11 @@ else
 
     private string errorMessage;
 
-    private JobVM job;
+    private JobVM? job;
     private List<TaskViewModel> tasks;
     private List<MechanicViewModel> mechanics;
     private List<PartViewModel> parts;
+    private MechanicViewModel mainMechanic;
 
     private IQueryable<PartViewModel> PartsViewModelsQueryable;
 
@@ -84,6 +97,18 @@ else
             try
             {
                 job = await JobService.GetJobById(jobId);
+
+                mainMechanic = await UserService.GetMechanic(job.MechanicId.Value);
+                
+                try
+                {
+                    var veh = await VehicleService.GetById(job.VehicleId.Value);
+                    job.ModelName = veh.fullModelName;
+                }
+                catch
+                {
+                    job.ModelName = "Не знайдено";
+                }
             }
             catch (Exception e)
             {
@@ -113,7 +138,7 @@ else
                 }
 
             }
-        }
+         }
         catch (Exception ex)
         {
             errorMessage = $"Помилка завантаження деталей роботи: {ex.Message}";
