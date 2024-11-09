@@ -66,6 +66,26 @@ namespace BlazorApp.Services
             return await httpClient.GetAsync<RetrainRequest>("uncertain-samples", parameters);
         }
 
+
+        public async Task UpdateStatus(Guid Id, string Status)
+        {
+            var parameters = new Dictionary<string, string>
+            {
+                { "Id",Id.ToString() },
+                { "Status", Status }
+            };
+             await httpClient.PutParametrsAsync("updateStatus", parameters);
+        }
+        public async Task UpdateMecahin(Guid Id, Guid MechanicId)
+        {
+            var parameters = new Dictionary<string, string>
+            {
+                { "Id",Id.ToString() },
+                { "MechanicId", MechanicId.ToString()}
+            };
+            await httpClient.PutParametrsAsync("updateMechanic", parameters);
+        }
+
         public async Task<IEnumerable<JobVM>> GetJobByMechanicId(Guid MechanicId)
         {
             var parameters = new Dictionary<string, string> { { "Id", $"{MechanicId.ToString()}" } };
@@ -73,12 +93,7 @@ namespace BlazorApp.Services
             return await httpClient.GetAsync<IEnumerable<JobVM>>("GetJobByMechanicId", parameters);
         }
 
-        /*        public async Task<IEnumerable<JobVM>> GetJobsBYUserId(Guid UserId)
-                {
-                    var parameters = new Dictionary<string, string> { {"Id",$"{UserId.ToString()}" } };
 
-                    return await httpClient.GetAsync<IEnumerable<JobVM>>("GetJobsBYUserId", parameters);
-                }*/
 
         public async Task<IEnumerable<JobVMForUser>> GetJobsBYUserId(Guid UserId)
         {

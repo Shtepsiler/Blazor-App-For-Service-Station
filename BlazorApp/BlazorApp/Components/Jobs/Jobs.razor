@@ -18,6 +18,7 @@
 @inject IJSRuntime JS
 @inject IJobService JobService
 @inject IVehicleService VehickeService
+@inject IUserService UserService
 
 <PageTitle>Роботи</PageTitle>
 
@@ -26,7 +27,6 @@
 
 
     <div>
-        <Button @onclick="ShowAddJobModal">Додати нову роботу</Button>
 
         <Select TItem="string" @bind-SelectedValue="selectedStatus" @bind-SelectedValue:after="FilterJobs">
             @foreach (var status in statuses)
@@ -65,6 +65,8 @@
             <TemplateColumn Title="Дії">
                 <ChildContent Context="job">
                     <Button @onclick="() => OnViewJob(job)">Переглянути</Button>
+                    <Button @onclick="() => SelectMechanic(job)">Обрати механіка</Button>
+
                 </ChildContent>
             </TemplateColumn>
         </QuickGrid>
@@ -102,6 +104,10 @@
             <PropertyColumn Property="@(p => p.Status)" Title="Статус" />
             <TemplateColumn Title="Дії">
                 <ChildContent Context="job">
+                    @if (job.Status == "NewJob")
+                    {
+                        <Button @onclick="() => RespondToJob(job)">Відгукнутися</Button>
+                    }
                     <Button @onclick="() => OnViewJob(job)">Переглянути</Button>
                 </ChildContent>
             </TemplateColumn>
@@ -109,6 +115,7 @@
     </div>
 </AuthorizeView>
 <Modal @bind-Visible="isAddJobModalVisible">
+    @if(selectedJob!=null){
     <ModalContent>
         <ModalHeader>
             <h5 class="modal-title">Нова робота</h5>
@@ -116,33 +123,40 @@
         </ModalHeader>
         <ModalBody>
             <div class="form-group">
-                <label for="carModel">Модель автомобіля</label>
-                <InputText id="carModel" @bind-Value="newJob.ModelName" />
-            </div>
-            <div class="form-group">
-                <label for="problemDescription">Опис проблеми</label>
-                <InputText id="problemDescription" @bind-Value="newJob.Description" />
-            </div>
-            <div class="form-group">
-                <label for="visitDate">Дата візиту</label>
-                <InputDate id="visitDate" @bind-Value="newJob.IssueDate" />
-            </div>
-            <div class="form-group">
                 <label for="status">Статус</label>
-                <Select @bind-SelectedValue="newJob.Status">
+                    <Select TItem="string" @bind-SelectedValue="selectedJob.Status">
                     @foreach (var status in statuses.Skip(1))
                     {
                         <SelectItem Value="@status">@status</SelectItem>
                     }
                 </Select>
             </div>
+            @if (isAdmin && mechanics != null)
+            {
+                <div class="mb-3">
+                    <label for="mechanic" class="form-label">Механік</label>
+                    <select id="mechanic" class="form-select" @bind="selectedJob.MechanicId">
+                        @foreach (var mechanic in mechanics)
+                        {
+                            <option value="@mechanic.Id" selected="@(selectedJob.MechanicId == mechanic.Id ? "selected" : null)">
+                                @mechanic.UserName
+                            </option>
+                        }
+                    </select>
+
+                </div>
+            }
+
         </ModalBody>
         <ModalFooter>
-            <Button @onclick="SaveJob">Зберегти</Button>
+            <Button @onclick="async() => await SaveJob()">Зберегти</Button>
             <Button @onclick="() => isAddJobModalVisible = false">Закрити</Button>
         </ModalFooter>
     </ModalContent>
+    }
 </Modal>
+
+
 @if (!string.IsNullOrEmpty(errorMessage))
 {
     <div class="alert alert-danger mt-3">@errorMessage</div>
@@ -151,36 +165,19 @@
     private JobVM? selectedJob;
     public bool isPopupVisible;
     private string errorMessage;
-
-    private void HandleJobDecision(bool agreed)
-    {
-        isPopupVisible = false;
-
-        if (agreed)
-        {
-            Console.WriteLine($"Механік погодився на роботу ID: {selectedJob?.Id}");
-            // Логіка для погодження роботи
-        }
-        else
-        {
-            Console.WriteLine($"Механік відмовився від роботи ID: {selectedJob?.Id}");
-            // Логіка для відмови
-        }
-
-        selectedJob = null; // Очистити вибір після дії
-    }
+    bool isAdmin { get; set; }
+   
     private List<JobVM> jobs = new();
     private List<JobVM> filteredJobs = new();
-    private List<MechanicViewModel> mechanics = new();
+    private List<MechanicViewModel> mechanics;
     private List<VehicleViewModel> Vehicles;
 
 
 
     private IQueryable<JobVM> jobModelsQierable = Enumerable.Empty<JobVM>().AsQueryable();
-    private List<string> statuses = new() { "all", "NewJob", "InProgress", "Completed" };
+    private List<string> statuses = new() { "all", "NewJob", "Pending", "InProgress", "Completed" };
     private string selectedStatus = "all";
     private bool isAddJobModalVisible = false;
-    private JobVM newJob = new JobVM();
 
     protected override async Task OnInitializedAsync()
     {
@@ -192,8 +189,10 @@
             // Опрацюйте ролі користувача тут   
             try
             {
+                isAdmin = false;
                 if (roles.FirstOrDefault().Equals("Admin"))
                 {
+                    isAdmin = true;
                     var jobsVMs = await JobService.GetAllJobs();
 
                     jobs = jobsVMs.ToList();
@@ -207,6 +206,9 @@
                 var  Vehiclesvms = await VehickeService.GetCarModelsAsync();
 
                 Vehicles = Vehiclesvms.ToList();
+
+                var mechs = await UserService.GetMechanics();
+                mechanics = mechs.ToList(); 
             }
             catch(Exception e)
             {
@@ -222,12 +224,30 @@
 
         jobModelsQierable = jobs.AsQueryable();
     }
+    private async void SelectMechanic(JobVM job)
+    {
+        // Show the modal and set the selected job
+        isAddJobModalVisible = true;
+        selectedJob = job;
+
+    }
+
+    private async void RespondToJob(JobVM job)
+    {
+        isAddJobModalVisible = true;
+        selectedJob = job;
+
+    }
 
     private void FilterJobs()
     {
         if (selectedStatus == "NewJob")
         {
             filteredJobs = jobs.Where(job => job.Status == "NewJob" || job.MechanicId == null).OrderByDescending(job => job.IssueDate).ToList();
+        }
+        else if (selectedStatus == "Pending")
+        {
+            filteredJobs = jobs.Where(job => job.Status == "Pending").OrderByDescending(job => job.IssueDate).ToList();
         }
         else if (selectedStatus == "InProgress")
         {
@@ -244,29 +264,17 @@
         jobModelsQierable = filteredJobs.AsQueryable();
     }
 
-    private void ShowAddJobModal()
+    private async Task SaveJob()
     {
-        newJob = new JobVM();
-        isAddJobModalVisible = true;
-    }
-
-    private void SaveJob()
-    {
-        if (newJob == null)
-        {
-            jobs.Add(newJob);
-        }
-        else
-        {
-            var job = jobs.FirstOrDefault(j => j.Id == newJob.Id);
-            if (job != null)
-            {
-                job.Status = newJob.Status;
-                job.Description = newJob.Description;
-                job.IssueDate = newJob.IssueDate;
-                job.Status = newJob.Status;
-            }
-        }
+        // Check if the status has changed before updating
+    
+            await JobService.UpdateStatus(selectedJob.Id.Value, selectedJob.Status);
+            FilterJobs();
+        
+        // Check if the mechanic has changed
+       
+            await JobService.UpdateMecahin(selectedJob.Id.Value, selectedJob.MechanicId.Value);
+        
 
         FilterJobs();
         isAddJobModalVisible = false;

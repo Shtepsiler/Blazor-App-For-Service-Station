@@ -61,6 +61,7 @@ builder.Services.AddScoped<ISpecialisationsService, SpecialisationsService>();
 builder.Services.AddScoped<ITasksService, TasksService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IVehicleService, VehicleService>();
+builder.Services.AddScoped<IMechanicsService, MechanicsService>();
 
 
 
@@ -195,6 +196,18 @@ builder.Services.AddHttpClient("Model", client =>
 builder.Services.AddHttpClient("Specialisations", client =>
 {
     client.BaseAddress = new Uri($"{APIBaseString}jobs/Specialisation/");
+    client.DefaultRequestHeaders.Add("Accept", "text/plain");
+})
+.ConfigurePrimaryHttpMessageHandler(() =>
+{
+    var handler = new HttpClientHandler();
+    handler.CookieContainer = new CookieContainer();
+    return handler;
+});
+
+builder.Services.AddHttpClient("Mecahics", client =>
+{
+    client.BaseAddress = new Uri($"{APIBaseString}jobs/Mecahic/");
     client.DefaultRequestHeaders.Add("Accept", "text/plain");
 })
 .ConfigurePrimaryHttpMessageHandler(() =>

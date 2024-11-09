@@ -53,6 +53,10 @@ namespace BlazorApp.Extensions
         public Cookie? GetJwtToken()
         {
             var context = _httpContextAccessor.HttpContext;
+            if (context == null)
+            {
+                throw new InvalidOperationException("HttpContext is null");
+            }
             var token = context.Request.Cookies.FirstOrDefault(p => p.Key == "Bearer");
             return token.Value is not null && token.Key is not null ? new Cookie(token.Key, token.Value) : null;
         }

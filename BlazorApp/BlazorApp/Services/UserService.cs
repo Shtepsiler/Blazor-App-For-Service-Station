@@ -4,6 +4,7 @@ using BlazorApp.Data;
 using BlazorApp.Extensions;
 using BlazorApp.Extensions.ViewModels.IdentityVMs;
 using BlazorApp.Services.Interfaces;
+using Blazorise;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BlazorApp.Services
@@ -140,7 +141,9 @@ namespace BlazorApp.Services
 
         public async Task SaveChanges(UserViewModel model)
         {
-            await httpClient.PutAsync("",model);
+            var parameters = new Dictionary<string, string> {
+            };
+            await httpClient.PutAsync($"{model.Id.ToString()}", parameters, model);
         }
 
         public async Task<IEnumerable<MechanicViewModel>> GetMechanics()
